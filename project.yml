@@ -1,0 +1,41 @@
+name: MacActivity
+options:
+  bundleIdPrefix: com.ishtiaqsyed
+  deploymentTarget:
+    iOS: '17.0'
+    macOS: '14.0'
+  xcodeVersion: '27.1'
+packages:
+  ActivityCore:
+    path: Packages/ActivityCore
+targets:
+  MacActivityPhone:
+    type: application
+    platform: iOS
+    sources: [Apps/Phone]
+    dependencies:
+      - package: ActivityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityPhone
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_FILE: Apps/Phone/Info.plist
+        SWIFT_VERSION: '5.10'
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: '1'
+  MacActivityMac:
+    type: application
+    platform: macOS
+    sources: [Apps/Mac]
+    dependencies:
+      - package: ActivityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityMac
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_FILE: Apps/Mac/Info.plist
+        SWIFT_VERSION: '5.10'
+        CODE_SIGN_STYLE: Automatic
