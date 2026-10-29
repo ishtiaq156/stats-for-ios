@@ -9,7 +9,7 @@ packages:
   ActivityCore:
     path: Packages/ActivityCore
 targets:
-  MacActivityPhone:
+  Stats:
     type: application
     platform: iOS
     sources: [Apps/Phone]
@@ -17,7 +17,7 @@ targets:
       - package: ActivityCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityPhone
+        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.StatsForIOS
         INFOPLIST_KEY_CFBundleDisplayName: Stats
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
@@ -26,7 +26,7 @@ targets:
         SWIFT_VERSION: '5.10'
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: '1'
-  MacActivityMac:
+  StatsCompanion:
     type: application
     platform: macOS
     sources: [Apps/Mac]
@@ -34,7 +34,7 @@ targets:
       - package: ActivityCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityMac
+        PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.StatsCompanion
         INFOPLIST_KEY_CFBundleDisplayName: Stats Companion
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES

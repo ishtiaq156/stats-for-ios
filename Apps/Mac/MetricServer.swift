@@ -7,7 +7,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
     let setupKey: Data
     private let snapshot: () -> MetricSnapshot
     private let onPort: (UInt16) -> Void
-    private let queue = DispatchQueue(label: "MacActivity.MetricServer")
+    private let queue = DispatchQueue(label: "StatsForIOS.MetricServer")
     private var listener: NWListener?
     private var advertiser: NetService?
 
@@ -123,7 +123,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
     private static func keyQuery() -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.ishtiaqsyed.MacActivity.setup",
+            kSecAttrService as String: "com.ishtiaqsyed.StatsForIOS.setup",
             kSecAttrAccount as String: "local"
         ]
     }

@@ -6,12 +6,12 @@ Inspired by the metric coverage of [Stats](https://github.com/exelban/stats) and
 
 ## Build
 
-Xcode 27.1 is installed at `/Volumes/SSD WD/Applications/Xcode.app`. Open `StatsForIOS.xcodeproj` and select either `MacActivityMac` or `MacActivityPhone`. If command line tools are active, set `DEVELOPER_DIR` for command-line builds:
+Xcode 27.1 is installed at `/Volumes/SSD WD/Applications/Xcode.app`. Open `StatsForIOS.xcodeproj` and select either `StatsCompanion` or `Stats`. If command line tools are active, set `DEVELOPER_DIR` for command-line builds:
 
 ```sh
 export DEVELOPER_DIR='/Volumes/SSD WD/Applications/Xcode.app/Contents/Developer'
-xcodebuild -project StatsForIOS.xcodeproj -scheme MacActivityMac -sdk macosx CODE_SIGNING_ALLOWED=NO build
-xcodebuild -project StatsForIOS.xcodeproj -scheme MacActivityPhone -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project StatsForIOS.xcodeproj -scheme StatsCompanion -sdk macosx CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project StatsForIOS.xcodeproj -scheme Stats -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build
 ```
 
 The project is generated from `project.yml` with XcodeGen. Run `xcodegen generate` after adding or removing source files or changing target settings.
@@ -24,8 +24,8 @@ swift test --package-path Packages/ActivityCore
 
 ## Pair locally
 
-1. Run **MacActivityMac** from Xcode. **Stats Companion** appears in the menu bar. Leave it running.
-2. Run **MacActivityPhone** on an iPhone on the same Wi-Fi. In Xcode, select your free **Personal Team** for the phone target and let Xcode manage signing. Tapping **Add Mac** asks for Local Network access; allow it.
+1. Run **StatsCompanion** from Xcode. **Stats Companion** appears in the menu bar. Leave it running.
+2. Run **Stats** on an iPhone on the same Wi-Fi. In Xcode, select your free **Personal Team** for the phone target and let Xcode manage signing. Tapping **Add Mac** asks for Local Network access; allow it.
 3. Tap **Add Mac**, choose the nearby Mac, then scan the QR code shown in the Mac menu or paste its setup key. If discovery is blocked, enter the local IP address, port, and setup key shown in the Mac menu. Camera access is requested only when scanning.
 4. The overview changes from labeled sample values to the Mac's readings. A failed connection displays a connection message instead of sample numbers.
 

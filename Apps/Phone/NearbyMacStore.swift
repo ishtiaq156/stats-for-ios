@@ -167,7 +167,7 @@ final class NearbyMacStore: ObservableObject {
 private enum PairingStore {
     private static func query(_ name: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: "com.ishtiaqsyed.MacActivity.pairing",
+         kSecAttrService as String: "com.ishtiaqsyed.StatsForIOS.pairing",
          kSecAttrAccount as String: name]
     }
 

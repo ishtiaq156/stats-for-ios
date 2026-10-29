@@ -2,7 +2,7 @@ import ActivityCore
 import SwiftUI
 
 @main
-struct MacActivityPhoneApp: App {
+struct StatsApp: App {
     var body: some Scene {
         WindowGroup { OverviewView() }
     }

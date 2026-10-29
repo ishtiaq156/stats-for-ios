@@ -4,7 +4,7 @@ import Darwin
 import SwiftUI
 
 @MainActor
-final class MacActivityModel: ObservableObject {
+final class StatsCompanionModel: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot
     @Published private(set) var localAddress: String?
     private let sampler = SystemSampler()
@@ -63,8 +63,8 @@ final class MacActivityModel: ObservableObject {
 }
 
 @main
-struct MacActivityApp: App {
-    @StateObject private var model = MacActivityModel()
+struct StatsCompanionApp: App {
+    @StateObject private var model = StatsCompanionModel()
 
     var body: some Scene {
         MenuBarExtra {

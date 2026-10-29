@@ -7,44 +7,44 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		417437BFD0981C82946C24EA /* SystemSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74841E46E29A4BF5A3379DD /* SystemSampler.swift */; };
-		504382DDBCDFDABFCBF053F4 /* QRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */; };
-		7149D4C7654A941198BC40CD /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
-		7F7B869E210933DE12E2155A /* MacActivityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */; };
-		808500F351AC3ABC5D000FF7 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2144DB8EF96FE0FDD21A1059 /* ActivityCore */; };
-		91B6D7F3C35259780EADAEFC /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = C43437E9BDB5E7C26917DA10 /* ActivityCore */; };
-		DD91FA7162F5CA5A7C43091B /* MacActivityPhoneApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */; };
-		FF109C0FC760BB412C885588 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
+		13B8CB1E91B04301901DD130 /* SystemSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74841E46E29A4BF5A3379DD /* SystemSampler.swift */; };
+		1B4DA540517239F214320A33 /* QRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */; };
+		537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
+		5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
+		95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65E5547A50E26C1DDF23DCD /* StatsApp.swift */; };
+		AE37237A302B37A6D4C313B4 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = ABA880534490FDC0A2FFDD1F /* ActivityCore */; };
+		E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C483E76106913FF006E13F1E /* StatsCompanionApp.swift */; };
+		F863C4EA5AD9A45B25D704E6 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = FCE735139E0A3D816301B694 /* ActivityCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1749FADF689752233144DA9B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScanner.swift; sourceTree = "<group>"; };
-		3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacActivityPhoneApp.swift; sourceTree = "<group>"; };
 		3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricServer.swift; sourceTree = "<group>"; };
 		4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacStore.swift; sourceTree = "<group>"; };
 		4DB12CCD37017A6CF24F1D20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4DB3E66BAE7B893DF964CB03 /* ActivityCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ActivityCore; path = Packages/ActivityCore; sourceTree = SOURCE_ROOT; };
-		94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacActivityMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacActivityApp.swift; sourceTree = "<group>"; };
-		C9408FAA82828067D7533132 /* MacActivityPhone.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MacActivityPhone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A92A9DF6BA510323F6E0415 /* StatsCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StatsCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		738DD2A729F3D301E4ACC214 /* Stats.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Stats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C483E76106913FF006E13F1E /* StatsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCompanionApp.swift; sourceTree = "<group>"; };
+		D65E5547A50E26C1DDF23DCD /* StatsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApp.swift; sourceTree = "<group>"; };
 		E74841E46E29A4BF5A3379DD /* SystemSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSampler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		05F44473CC237BF0E3261599 /* Frameworks */ = {
+		28B7B3120D3156EA59D0E6AA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				808500F351AC3ABC5D000FF7 /* ActivityCore in Frameworks */,
+				AE37237A302B37A6D4C313B4 /* ActivityCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C1BFBC4B0A915A1FC364EE79 /* Frameworks */ = {
+		8189AB0DB076A7A3D55BD6A3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				91B6D7F3C35259780EADAEFC /* ActivityCore in Frameworks */,
+				F863C4EA5AD9A45B25D704E6 /* ActivityCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,8 +72,8 @@
 		B770D429D51532A03C7D4DC8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */,
-				C9408FAA82828067D7533132 /* MacActivityPhone.app */,
+				738DD2A729F3D301E4ACC214 /* Stats.app */,
+				5A92A9DF6BA510323F6E0415 /* StatsCompanion.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,8 +82,8 @@
 			isa = PBXGroup;
 			children = (
 				4DB12CCD37017A6CF24F1D20 /* Info.plist */,
-				B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */,
 				3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */,
+				C483E76106913FF006E13F1E /* StatsCompanionApp.swift */,
 				E74841E46E29A4BF5A3379DD /* SystemSampler.swift */,
 			);
 			name = Mac;
@@ -94,9 +94,9 @@
 			isa = PBXGroup;
 			children = (
 				1749FADF689752233144DA9B /* Info.plist */,
-				3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */,
 				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
 				30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */,
+				D65E5547A50E26C1DDF23DCD /* StatsApp.swift */,
 			);
 			name = Phone;
 			path = Apps/Phone;
@@ -105,42 +105,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		74C9401FBFCE186AF54C1DF4 /* MacActivityPhone */ = {
+		0F4E41796EB919F98970E1A7 /* StatsCompanion */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CB1955A0D3860ABF594B22F9 /* Build configuration list for PBXNativeTarget "MacActivityPhone" */;
+			buildConfigurationList = 52D52194C7D3305B07CE1CD3 /* Build configuration list for PBXNativeTarget "StatsCompanion" */;
 			buildPhases = (
-				A070E067F8991BAF9FE00721 /* Sources */,
-				05F44473CC237BF0E3261599 /* Frameworks */,
+				624569FF5A0FF5800D3EBB5F /* Sources */,
+				8189AB0DB076A7A3D55BD6A3 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = MacActivityPhone;
+			name = StatsCompanion;
 			packageProductDependencies = (
-				2144DB8EF96FE0FDD21A1059 /* ActivityCore */,
+				FCE735139E0A3D816301B694 /* ActivityCore */,
 			);
-			productName = MacActivityPhone;
-			productReference = C9408FAA82828067D7533132 /* MacActivityPhone.app */;
+			productName = StatsCompanion;
+			productReference = 5A92A9DF6BA510323F6E0415 /* StatsCompanion.app */;
 			productType = "com.apple.product-type.application";
 		};
-		BA67F240B13426AA9AE73D3B /* MacActivityMac */ = {
+		6D7E0DA0C6EB12A7A1E4B223 /* Stats */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2CFC4455812A858F0AB208F7 /* Build configuration list for PBXNativeTarget "MacActivityMac" */;
+			buildConfigurationList = 60E31AE9D555EDBECDC581AE /* Build configuration list for PBXNativeTarget "Stats" */;
 			buildPhases = (
-				8A64F0147BEF45F25D6B6C78 /* Sources */,
-				C1BFBC4B0A915A1FC364EE79 /* Frameworks */,
+				B347787CAD3C33C10596DFD5 /* Sources */,
+				28B7B3120D3156EA59D0E6AA /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = MacActivityMac;
+			name = Stats;
 			packageProductDependencies = (
-				C43437E9BDB5E7C26917DA10 /* ActivityCore */,
+				ABA880534490FDC0A2FFDD1F /* ActivityCore */,
 			);
-			productName = MacActivityMac;
-			productReference = 94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */;
+			productName = Stats;
+			productReference = 738DD2A729F3D301E4ACC214 /* Stats.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -152,10 +152,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2710;
 				TargetAttributes = {
-					74C9401FBFCE186AF54C1DF4 = {
+					0F4E41796EB919F98970E1A7 = {
 						ProvisioningStyle = Automatic;
 					};
-					BA67F240B13426AA9AE73D3B = {
+					6D7E0DA0C6EB12A7A1E4B223 = {
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -177,59 +177,37 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				74C9401FBFCE186AF54C1DF4 /* MacActivityPhone */,
-				BA67F240B13426AA9AE73D3B /* MacActivityMac */,
+				6D7E0DA0C6EB12A7A1E4B223 /* Stats */,
+				0F4E41796EB919F98970E1A7 /* StatsCompanion */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		8A64F0147BEF45F25D6B6C78 /* Sources */ = {
+		624569FF5A0FF5800D3EBB5F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F7B869E210933DE12E2155A /* MacActivityApp.swift in Sources */,
-				FF109C0FC760BB412C885588 /* MetricServer.swift in Sources */,
-				417437BFD0981C82946C24EA /* SystemSampler.swift in Sources */,
+				537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */,
+				E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */,
+				13B8CB1E91B04301901DD130 /* SystemSampler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A070E067F8991BAF9FE00721 /* Sources */ = {
+		B347787CAD3C33C10596DFD5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD91FA7162F5CA5A7C43091B /* MacActivityPhoneApp.swift in Sources */,
-				7149D4C7654A941198BC40CD /* NearbyMacStore.swift in Sources */,
-				504382DDBCDFDABFCBF053F4 /* QRCodeScanner.swift in Sources */,
+				5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */,
+				1B4DA540517239F214320A33 /* QRCodeScanner.swift in Sources */,
+				95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		64659BCCACEAF64B58C98219 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/Phone/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Stats;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityPhone;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.10;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
-		6BCBB10868C7786F8226517B /* Release */ = {
+		03A078FE3C667EEE6D7703F8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -243,13 +221,13 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityMac;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.10;
 			};
 			name = Release;
 		};
-		801857F1383323FFE28D4CD7 /* Debug */ = {
+		4CDF3C73D2A77AF05D040F88 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -264,10 +242,52 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityPhone;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.10;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		60A2DA5C4C0E2465177146FE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Phone/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Stats;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.10;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		97A2CAA331FF399E4BE3A35E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
+				INFOPLIST_KEY_LSUIElement = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
 			};
 			name = Debug;
 		};
@@ -326,26 +346,6 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
-		};
-		D0609B83BE294549FB810B52 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Apps/Mac/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
-				INFOPLIST_KEY_LSUIElement = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityMac;
-				SDKROOT = macosx;
-				SWIFT_VERSION = 5.10;
-			};
-			name = Debug;
 		};
 		E6AA39C1BC2BF47DFA277769 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -422,20 +422,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		2CFC4455812A858F0AB208F7 /* Build configuration list for PBXNativeTarget "MacActivityMac" */ = {
+		52D52194C7D3305B07CE1CD3 /* Build configuration list for PBXNativeTarget "StatsCompanion" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D0609B83BE294549FB810B52 /* Debug */,
-				6BCBB10868C7786F8226517B /* Release */,
+				97A2CAA331FF399E4BE3A35E /* Debug */,
+				03A078FE3C667EEE6D7703F8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		CB1955A0D3860ABF594B22F9 /* Build configuration list for PBXNativeTarget "MacActivityPhone" */ = {
+		60E31AE9D555EDBECDC581AE /* Build configuration list for PBXNativeTarget "Stats" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				801857F1383323FFE28D4CD7 /* Debug */,
-				64659BCCACEAF64B58C98219 /* Release */,
+				60A2DA5C4C0E2465177146FE /* Debug */,
+				4CDF3C73D2A77AF05D040F88 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -450,11 +450,11 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		2144DB8EF96FE0FDD21A1059 /* ActivityCore */ = {
+		ABA880534490FDC0A2FFDD1F /* ActivityCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ActivityCore;
 		};
-		C43437E9BDB5E7C26917DA10 /* ActivityCore */ = {
+		FCE735139E0A3D816301B694 /* ActivityCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ActivityCore;
 		};
