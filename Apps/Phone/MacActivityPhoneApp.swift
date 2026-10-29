@@ -51,7 +51,7 @@ private struct OverviewView: View {
                 .padding(18)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Mac Activity")
+            .navigationTitle("Stats")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPairing = true } label: { Image(systemName: "plus.circle") }
@@ -107,6 +107,9 @@ private struct PairingView: View {
     @State private var showPairingChoices = false
     @State private var showKeyPrompt = false
     @State private var showScanner = false
+    @State private var manualHost = ""
+    @State private var manualPort = ""
+    @State private var manualKey = ""
 
     var body: some View {
         NavigationStack {
@@ -114,7 +117,7 @@ private struct PairingView: View {
                 Section {
                     if store.devices.isEmpty {
                         ContentUnavailableView("Looking for Macs", systemImage: "desktopcomputer.and.arrow.down",
-                                               description: Text("Open Mac Activity on your Mac and keep both devices on the same network."))
+                                               description: Text("Open Stats Companion on your Mac and keep both devices on the same network."))
                     } else {
                         ForEach(store.devices) { device in
                             Button {
@@ -136,6 +139,23 @@ private struct PairingView: View {
                 } header: { Text("Nearby Macs") }
                 footer: { Text("The Mac menu shows a setup key. Pair once, then the key is saved securely on this iPhone.") }
 
+                Section {
+                    TextField("Mac IP address", text: $manualHost)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    TextField("Port", text: $manualPort)
+                        .keyboardType(.numberPad)
+                    SecureField("Setup key", text: $manualKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Button("Connect") {
+                        if store.pairManual(host: manualHost, portString: manualPort, keyString: manualKey) {
+                            dismiss()
+                        } else { invalidKey = true }
+                    }
+                } header: { Text("Manual address") }
+                footer: { Text("Use the local address and setup key shown in Stats Companion when nearby discovery is unavailable.") }
+
                 if store.selectedName != nil {
                     Section {
                         Button("Forget current Mac", role: .destructive) { store.forget() }
@@ -148,7 +168,7 @@ private struct PairingView: View {
             .confirmationDialog("Pair with \(pairingDevice?.name ?? "Mac")", isPresented: $showPairingChoices) {
                 Button("Scan QR code") { showScanner = true }
                 Button("Paste setup key") { showKeyPrompt = true }
-            } message: { Text("Open Mac Activity in your Mac menu bar.") }
+            } message: { Text("Open Stats Companion in your Mac menu bar.") }
             .alert("Enter setup key", isPresented: $showKeyPrompt) {
                 TextField("Paste the key from your Mac", text: $key)
                 Button("Pair") {
@@ -156,10 +176,10 @@ private struct PairingView: View {
                     else { invalidKey = true }
                 }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("Copy the setup key from the Mac Activity menu bar app.") }
+            } message: { Text("Copy the setup key from Stats Companion on your Mac.") }
             .alert("Invalid setup key", isPresented: $invalidKey) {
                 Button("OK") {}
-            } message: { Text("Copy the full key shown on your Mac and try again.") }
+            } message: { Text("Check the address, port, and full setup key shown on your Mac.") }
             .sheet(isPresented: $showScanner) {
                 NavigationStack {
                     QRCodeScanner { code in

@@ -1,4 +1,4 @@
-name: MacActivity
+name: StatsForIOS
 options:
   bundleIdPrefix: com.ishtiaqsyed
   deploymentTarget:
@@ -18,6 +18,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityPhone
+        INFOPLIST_KEY_CFBundleDisplayName: Stats
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
@@ -34,6 +35,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ishtiaqsyed.MacActivityMac
+        INFOPLIST_KEY_CFBundleDisplayName: Stats Companion
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_FILE: Apps/Mac/Info.plist

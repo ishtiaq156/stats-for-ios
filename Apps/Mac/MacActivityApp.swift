@@ -1,10 +1,12 @@
 import ActivityCore
 import CoreImage.CIFilterBuiltins
+import Darwin
 import SwiftUI
 
 @MainActor
 final class MacActivityModel: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot
+    @Published private(set) var localAddress: String?
     private let sampler = SystemSampler()
     private var timer: Timer?
     private var server: MetricServer?
@@ -13,9 +15,7 @@ final class MacActivityModel: ObservableObject {
 
     init() {
         snapshot = sampler.sample()
-        server = MetricServer(snapshot: { [weak self] in
-            self?.snapshot ?? MetricSnapshot(machineName: "Mac")
-        })
+        server = makeServer()
         server?.start()
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
@@ -27,11 +27,38 @@ final class MacActivityModel: ObservableObject {
     func revokeAllPhones() {
         server?.stop()
         MetricServer.revokeAllPhones()
-        server = MetricServer(snapshot: { [weak self] in
-            self?.snapshot ?? MetricSnapshot(machineName: "Mac")
-        })
+        server = makeServer()
         server?.start()
         objectWillChange.send()
+    }
+
+    private func makeServer() -> MetricServer {
+        MetricServer(snapshot: { [weak self] in
+            self?.snapshot ?? MetricSnapshot(machineName: "Mac")
+        }, onPort: { [weak self] port in
+            self?.localAddress = Self.ipv4Address().map { "\($0):\(port)" }
+        })
+    }
+
+    private static func ipv4Address() -> String? {
+        var head: UnsafeMutablePointer<ifaddrs>?
+        guard getifaddrs(&head) == 0 else { return nil }
+        defer { freeifaddrs(head) }
+        var fallback: String?
+        var cursor = head
+        while let item = cursor {
+            defer { cursor = item.pointee.ifa_next }
+            guard let address = item.pointee.ifa_addr,
+                  address.pointee.sa_family == UInt8(AF_INET),
+                  item.pointee.ifa_flags & UInt32(IFF_LOOPBACK) == 0 else { continue }
+            var bytes = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+            var ipv4 = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr }
+            guard inet_ntop(AF_INET, &ipv4, &bytes, socklen_t(bytes.count)) != nil else { continue }
+            let value = String(cString: bytes)
+            if String(cString: item.pointee.ifa_name) == "en0" { return value }
+            if fallback == nil { fallback = value }
+        }
+        return fallback
     }
 }
 
@@ -54,6 +81,9 @@ struct MacActivityApp: App {
                 Divider()
                 Text("Pair this Mac")
                     .font(.headline)
+                if let address = model.localAddress {
+                    LabeledContent("Local address", value: address)
+                }
                 Text("Copy this setup key into the iPhone app. Keep it private: it grants access to these metrics.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(model.setupKey)
@@ -72,12 +102,12 @@ struct MacActivityApp: App {
                     NSPasteboard.general.setString(model.setupKey, forType: .string)
                 }
                 Button("Revoke all paired phones") { model.revokeAllPhones() }
-                Button("Quit Mac Activity") { NSApplication.shared.terminate(nil) }
+                Button("Quit Stats Companion") { NSApplication.shared.terminate(nil) }
             }
             .padding(14)
             .frame(width: 300)
         } label: {
-            Label("Mac Activity", systemImage: "chart.xyaxis.line")
+            Label("Stats Companion", systemImage: "chart.xyaxis.line")
         }
         .menuBarExtraStyle(.window)
     }

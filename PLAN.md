@@ -1,4 +1,4 @@
-# Mac activity on iPhone — working plan
+# Stats for iOS — working plan
 
 ## Goal
 
@@ -65,4 +65,4 @@ Create the two Xcode targets and shared package, implement a small Mac sampler a
 
 - Xcode project, shared package, Mac sampler, iPhone overview, Bonjour discovery, encrypted local snapshot transport, QR setup code, and Keychain storage are implemented.
 - Both targets build for Mac/iOS simulator, and the iPhone target builds for iOS device with signing disabled. The simulator overview has been visually checked.
-- **Next verification:** run both apps together on the actual Mac and iPhone, check local-network permission and pairing, then fix runtime issues. Per-phone revocation, history, details, and remote access remain open.
+- A manual address fallback is implemented. The Mac listener reaches its ready state, but Bonjour publication has not been observed in this development environment; actual Mac local-network permission and physical-iPhone pairing need verification. Shared packet tests cover decryption, wrong keys, tampering, and frame bounds. Per-phone revocation, history, details, and remote access remain open.

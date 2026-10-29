@@ -61,6 +61,14 @@ final class NearbyMacStore: ObservableObject {
         return true
     }
 
+    func pairManual(host: String, portString: String, keyString: String) -> Bool {
+        let host = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !host.isEmpty, let number = UInt16(portString),
+              let port = NWEndpoint.Port(rawValue: number) else { return false }
+        let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: port)
+        return pair(Device(endpoint: endpoint, name: "\(host):\(number)"), keyString: keyString)
+    }
+
     func select(_ device: Device) -> Bool {
         guard let key = PairingStore.load(for: device.name) else { return false }
         selectedName = device.name

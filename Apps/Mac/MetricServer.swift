@@ -3,26 +3,32 @@ import Foundation
 import Network
 import Security
 
-final class MetricServer {
+final class MetricServer: NSObject, NetServiceDelegate {
     let setupKey: Data
     private let snapshot: () -> MetricSnapshot
+    private let onPort: (UInt16) -> Void
     private let queue = DispatchQueue(label: "MacActivity.MetricServer")
     private var listener: NWListener?
+    private var advertiser: NetService?
 
-    init(snapshot: @escaping () -> MetricSnapshot) {
+    init(snapshot: @escaping () -> MetricSnapshot, onPort: @escaping (UInt16) -> Void) {
         self.snapshot = snapshot
+        self.onPort = onPort
         self.setupKey = Self.loadOrCreateKey()
+        super.init()
     }
 
     func start() {
         do {
             let listener = try NWListener(using: .tcp)
-            listener.service = .init(name: Host.current().localizedName ?? "Mac", type: SecurePacket.serviceType)
-            listener.stateUpdateHandler = { state in
-                NSLog("Mac Activity listener: %@", String(describing: state))
-            }
-            listener.serviceRegistrationUpdateHandler = { change in
-                NSLog("Mac Activity Bonjour: %@", String(describing: change))
+            listener.stateUpdateHandler = { [weak self, weak listener] state in
+                NSLog("Stats Companion listener: %@", String(describing: state))
+                if case .ready = state, let port = listener?.port {
+                    DispatchQueue.main.async {
+                        self?.onPort(port.rawValue)
+                        self?.advertise(port: port)
+                    }
+                }
             }
             listener.newConnectionHandler = { [weak self] connection in
                 self?.accept(connection)
@@ -30,11 +36,30 @@ final class MetricServer {
             listener.start(queue: queue)
             self.listener = listener
         } catch {
-            NSLog("Mac Activity listener failed: %@", String(describing: error))
+            NSLog("Stats Companion listener failed: %@", String(describing: error))
         }
     }
 
-    func stop() { listener?.cancel() }
+    func stop() {
+        listener?.cancel()
+        advertiser?.stop()
+    }
+
+    private func advertise(port: NWEndpoint.Port) {
+        advertiser?.stop()
+        let service = NetService(domain: "local.", type: SecurePacket.serviceType + ".", name: "Stats Companion", port: Int32(port.rawValue))
+        service.delegate = self
+        service.publish()
+        advertiser = service
+    }
+
+    func netServiceDidPublish(_ sender: NetService) {
+        NSLog("Stats Companion Bonjour published")
+    }
+
+    func netService(_ sender: NetService, didNotPublish errorDict: [String: NSNumber]) {
+        NSLog("Stats Companion Bonjour failed: %@", String(describing: errorDict))
+    }
 
     static func revokeAllPhones() {
         SecItemDelete(keyQuery() as CFDictionary)

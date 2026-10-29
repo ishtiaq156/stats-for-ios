@@ -4,5 +4,9 @@
 <dict>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Share this Mac's activity with iPhones you pair on your local network.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_macactivity._tcp</string>
+    </array>
 </dict>
 </plist>

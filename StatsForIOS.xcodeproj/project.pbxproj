@@ -1,0 +1,464 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		417437BFD0981C82946C24EA /* SystemSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74841E46E29A4BF5A3379DD /* SystemSampler.swift */; };
+		504382DDBCDFDABFCBF053F4 /* QRCodeScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */; };
+		7149D4C7654A941198BC40CD /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
+		7F7B869E210933DE12E2155A /* MacActivityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */; };
+		808500F351AC3ABC5D000FF7 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2144DB8EF96FE0FDD21A1059 /* ActivityCore */; };
+		91B6D7F3C35259780EADAEFC /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = C43437E9BDB5E7C26917DA10 /* ActivityCore */; };
+		DD91FA7162F5CA5A7C43091B /* MacActivityPhoneApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */; };
+		FF109C0FC760BB412C885588 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1749FADF689752233144DA9B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScanner.swift; sourceTree = "<group>"; };
+		3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacActivityPhoneApp.swift; sourceTree = "<group>"; };
+		3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricServer.swift; sourceTree = "<group>"; };
+		4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacStore.swift; sourceTree = "<group>"; };
+		4DB12CCD37017A6CF24F1D20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4DB3E66BAE7B893DF964CB03 /* ActivityCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ActivityCore; path = Packages/ActivityCore; sourceTree = SOURCE_ROOT; };
+		94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacActivityMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacActivityApp.swift; sourceTree = "<group>"; };
+		C9408FAA82828067D7533132 /* MacActivityPhone.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MacActivityPhone.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E74841E46E29A4BF5A3379DD /* SystemSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSampler.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		05F44473CC237BF0E3261599 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				808500F351AC3ABC5D000FF7 /* ActivityCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1BFBC4B0A915A1FC364EE79 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				91B6D7F3C35259780EADAEFC /* ActivityCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		327CE8C16257B8F76F459BE1 = {
+			isa = PBXGroup;
+			children = (
+				C1E27687865769F235D76046 /* Mac */,
+				6723CBBF3883CD9B3323A477 /* Packages */,
+				C5A14E6E97965527798539D7 /* Phone */,
+				B770D429D51532A03C7D4DC8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6723CBBF3883CD9B3323A477 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				4DB3E66BAE7B893DF964CB03 /* ActivityCore */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		B770D429D51532A03C7D4DC8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */,
+				C9408FAA82828067D7533132 /* MacActivityPhone.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C1E27687865769F235D76046 /* Mac */ = {
+			isa = PBXGroup;
+			children = (
+				4DB12CCD37017A6CF24F1D20 /* Info.plist */,
+				B1AA37CCAD5FBF22AE9326F4 /* MacActivityApp.swift */,
+				3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */,
+				E74841E46E29A4BF5A3379DD /* SystemSampler.swift */,
+			);
+			name = Mac;
+			path = Apps/Mac;
+			sourceTree = "<group>";
+		};
+		C5A14E6E97965527798539D7 /* Phone */ = {
+			isa = PBXGroup;
+			children = (
+				1749FADF689752233144DA9B /* Info.plist */,
+				3A5F3DD7A4C044F8215E7124 /* MacActivityPhoneApp.swift */,
+				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
+				30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */,
+			);
+			name = Phone;
+			path = Apps/Phone;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		74C9401FBFCE186AF54C1DF4 /* MacActivityPhone */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CB1955A0D3860ABF594B22F9 /* Build configuration list for PBXNativeTarget "MacActivityPhone" */;
+			buildPhases = (
+				A070E067F8991BAF9FE00721 /* Sources */,
+				05F44473CC237BF0E3261599 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacActivityPhone;
+			packageProductDependencies = (
+				2144DB8EF96FE0FDD21A1059 /* ActivityCore */,
+			);
+			productName = MacActivityPhone;
+			productReference = C9408FAA82828067D7533132 /* MacActivityPhone.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BA67F240B13426AA9AE73D3B /* MacActivityMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2CFC4455812A858F0AB208F7 /* Build configuration list for PBXNativeTarget "MacActivityMac" */;
+			buildPhases = (
+				8A64F0147BEF45F25D6B6C78 /* Sources */,
+				C1BFBC4B0A915A1FC364EE79 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacActivityMac;
+			packageProductDependencies = (
+				C43437E9BDB5E7C26917DA10 /* ActivityCore */,
+			);
+			productName = MacActivityMac;
+			productReference = 94DDCD1AA3AEB1F9FFEE8A5F /* MacActivityMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		22A79647B8AF75D4B4FC3B1E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					74C9401FBFCE186AF54C1DF4 = {
+						ProvisioningStyle = Automatic;
+					};
+					BA67F240B13426AA9AE73D3B = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 01305F1FDA62BF0E44C9F80D /* Build configuration list for PBXProject "StatsForIOS" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 327CE8C16257B8F76F459BE1;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				181A6321E0BB846E1D8157F4 /* XCLocalSwiftPackageReference "Packages/ActivityCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B770D429D51532A03C7D4DC8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				74C9401FBFCE186AF54C1DF4 /* MacActivityPhone */,
+				BA67F240B13426AA9AE73D3B /* MacActivityMac */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8A64F0147BEF45F25D6B6C78 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F7B869E210933DE12E2155A /* MacActivityApp.swift in Sources */,
+				FF109C0FC760BB412C885588 /* MetricServer.swift in Sources */,
+				417437BFD0981C82946C24EA /* SystemSampler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A070E067F8991BAF9FE00721 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DD91FA7162F5CA5A7C43091B /* MacActivityPhoneApp.swift in Sources */,
+				7149D4C7654A941198BC40CD /* NearbyMacStore.swift in Sources */,
+				504382DDBCDFDABFCBF053F4 /* QRCodeScanner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		64659BCCACEAF64B58C98219 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Phone/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Stats;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityPhone;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.10;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		6BCBB10868C7786F8226517B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
+				INFOPLIST_KEY_LSUIElement = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityMac;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		801857F1383323FFE28D4CD7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Phone/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Stats;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityPhone;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.10;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BC53C70DB71128760B94589E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D0609B83BE294549FB810B52 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Apps/Mac/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
+				INFOPLIST_KEY_LSUIElement = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.MacActivityMac;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		E6AA39C1BC2BF47DFA277769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		01305F1FDA62BF0E44C9F80D /* Build configuration list for PBXProject "StatsForIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6AA39C1BC2BF47DFA277769 /* Debug */,
+				BC53C70DB71128760B94589E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2CFC4455812A858F0AB208F7 /* Build configuration list for PBXNativeTarget "MacActivityMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0609B83BE294549FB810B52 /* Debug */,
+				6BCBB10868C7786F8226517B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CB1955A0D3860ABF594B22F9 /* Build configuration list for PBXNativeTarget "MacActivityPhone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				801857F1383323FFE28D4CD7 /* Debug */,
+				64659BCCACEAF64B58C98219 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		181A6321E0BB846E1D8157F4 /* XCLocalSwiftPackageReference "Packages/ActivityCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ActivityCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2144DB8EF96FE0FDD21A1059 /* ActivityCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ActivityCore;
+		};
+		C43437E9BDB5E7C26917DA10 /* ActivityCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ActivityCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 22A79647B8AF75D4B4FC3B1E /* Project object */;
+}

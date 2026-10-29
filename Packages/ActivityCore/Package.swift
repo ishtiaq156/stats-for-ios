@@ -5,5 +5,8 @@ let package = Package(
     name: "ActivityCore",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "ActivityCore", targets: ["ActivityCore"])],
-    targets: [.target(name: "ActivityCore")]
+    targets: [
+        .target(name: "ActivityCore"),
+        .testTarget(name: "ActivityCoreTests", dependencies: ["ActivityCore"])
+    ]
 )
