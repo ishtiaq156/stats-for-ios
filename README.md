@@ -25,7 +25,7 @@ swift test --package-path Packages/ActivityCore
 ## Pair locally
 
 1. Run **MacActivityMac** from Xcode. **Stats Companion** appears in the menu bar. Leave it running.
-2. Run **MacActivityPhone** on an iPhone on the same Wi-Fi. In Xcode, select your free **Personal Team** for the phone target and let Xcode manage signing. The first launch asks for Local Network access; allow it.
+2. Run **MacActivityPhone** on an iPhone on the same Wi-Fi. In Xcode, select your free **Personal Team** for the phone target and let Xcode manage signing. Tapping **Add Mac** asks for Local Network access; allow it.
 3. Tap **Add Mac**, choose the nearby Mac, then scan the QR code shown in the Mac menu or paste its setup key. If discovery is blocked, enter the local IP address, port, and setup key shown in the Mac menu. Camera access is requested only when scanning.
 4. The overview changes from labeled sample values to the Mac's readings. A failed connection displays a connection message instead of sample numbers.
 

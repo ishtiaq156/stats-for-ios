@@ -197,6 +197,7 @@ private struct PairingView: View {
                 }
             }
         }
+        .onAppear { store.startDiscovery() }
     }
 }
 

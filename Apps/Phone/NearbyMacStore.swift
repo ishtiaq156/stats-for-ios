@@ -21,6 +21,7 @@ final class NearbyMacStore: ObservableObject {
     private var selectedKey: Data?
     private var timer: Timer?
     private var inFlight = false
+    private var browsing = false
 
     init() {
         browser = NWBrowser(for: .bonjour(type: SecurePacket.serviceType, domain: nil), using: .tcp)
@@ -42,10 +43,15 @@ final class NearbyMacStore: ObservableObject {
                 Task { @MainActor in self?.status = "Discovery failed: \(error.localizedDescription)" }
             }
         }
-        browser.start(queue: .main)
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
+    }
+
+    func startDiscovery() {
+        guard !browsing else { return }
+        browsing = true
+        browser.start(queue: .main)
     }
 
     func pair(_ device: Device, keyString: String) -> Bool {
@@ -142,7 +148,7 @@ final class NearbyMacStore: ObservableObject {
                     self?.fail(); return
                 }
                 self?.snapshot = snapshot
-                self?.status = "Updated just now"
+                self?.status = "Last update \(snapshot.timestamp.formatted(date: .omitted, time: .standard))"
                 self?.inFlight = false
             }
         }
@@ -150,7 +156,11 @@ final class NearbyMacStore: ObservableObject {
 
     private func fail() {
         inFlight = false
-        status = snapshot == nil ? "Cannot connect · check setup key" : "Disconnected · showing last update"
+        if let snapshot {
+            status = "Disconnected · last update \(snapshot.timestamp.formatted(date: .omitted, time: .standard))"
+        } else {
+            status = "Cannot connect · check setup key"
+        }
     }
 }
 
