@@ -86,6 +86,9 @@ final class StatsCompanionModel: ObservableObject {
     }
 
     func refreshPasscode() {
+        guard !pairingPending else { return }
+        pairingCode = nil
+        pairingExpires = nil
         pairingLocked = false
         startPairing()
     }

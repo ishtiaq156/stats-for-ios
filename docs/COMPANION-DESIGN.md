@@ -6,7 +6,7 @@ The Mac companion stays a menu bar app that samples activity for the iPhone. Its
 
 ## Menu
 
-1. **Passcode** is always shown at the top of the menu with a copy control and an expiry countdown. It rotates after five minutes or one successful pairing. Three wrong attempts pause pairing until the Mac user refreshes the code.
+1. **Passcode** is always shown at the top of the menu with copy and refresh controls and an expiry countdown. The refresh control immediately replaces the active code with a different five-digit code and resets its five-minute expiry; the previous code stops working. It also rotates after five minutes or one successful pairing. Three wrong attempts pause pairing until the Mac user refreshes the code.
 2. **Network status** uses a clear success or warning indicator to report whether the companion is listening and discoverable, with the actual port. It tries port 8888 first and uses an available port if 8888 is occupied. A failure state gives a useful reason instead of claiming discoverability.
 3. **Phones** uses a warning indicator when no phones are connected and shows each recently active phone by name otherwise. “Connected” means a successful stats fetch in the last ten seconds. A remembered phone outside that window is “paired,” not “connected.”
 4. **Check for updates** compares the installed Mac version with the latest GitHub Release and presents checking and up-to-date states inline. An available version links to its release page until a signed update feed supports in-app installation. **Website** opens the GitHub repository until a dedicated site exists. **About** opens the native Mac About panel in front. **Changelog** opens the scrollable release-notes page in Settings.
@@ -14,7 +14,9 @@ The Mac companion stays a menu bar app that samples activity for the iPhone. Its
 
 Dividers separate pairing and status, links, login and settings, and Quit. The menu does not repeat the live metric dashboard. It uses a compact native macOS popover with hover and keyboard row highlights, VoiceOver labels, and readable text in both appearances.
 
-For the compact-menu visual pass, the status panel is 312 points wide with 13-point menu labels, 26-point action rows, tighter separators, and a 30-point passcode. These dimensions are tuned against the supplied Hilium screenshot. Hovering or keyboard-selecting an action uses macOS's selected-content blue background and selected-menu-item white text, including on its shortcut or icon. The login switch is smaller to align with the tighter row rhythm.
+For the compact-menu visual pass, the status panel is 312 points wide with 13-point menu labels, 26-point action rows, tighter separators, and a 30-point passcode. These dimensions are tuned against the supplied Hilium screenshot. Hovering or keyboard-selecting an action uses macOS's selected-content blue background and selected-menu-item white text, including on its shortcut or icon. The smaller native **Open at login** switch stays unfilled on pointer hover; keyboard navigation uses a thin focus outline rather than the action-row highlight.
+
+The no-device icon is vertically centered with its single-line label while the network indicator stays aligned to the first line when its status wraps. The login switch is pinned to the trailing menu inset. A small refresh icon sits beside the passcode copy action and is reachable with arrow keys.
 
 ## Pairing and device access
 

@@ -59,8 +59,12 @@ final class MetricServer: NSObject, NetServiceDelegate {
         queue.async { [weak self] in
             guard let self else { return }
             var random: UInt32 = 0
-            guard SecRandomCopyBytes(kSecRandomDefault, MemoryLayout<UInt32>.size, &random) == errSecSuccess else { return }
-            let code = String(format: "%05d", random % 100_000)
+            let previousCode = self.pairingSession?.code
+            var code: String
+            repeat {
+                guard SecRandomCopyBytes(kSecRandomDefault, MemoryLayout<UInt32>.size, &random) == errSecSuccess else { return }
+                code = String(format: "%05d", random % 100_000)
+            } while code == previousCode
             let session = PairingSession(id: UUID(), code: code, expires: Date().addingTimeInterval(300))
             self.pairingSession = session
             DispatchQueue.main.async { completion(code, session.expires) }

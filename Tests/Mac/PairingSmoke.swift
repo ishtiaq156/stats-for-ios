@@ -31,9 +31,16 @@ private final class Runner {
 
     func run() {
         server.start()
-        server.beginPairing { [weak self] code, _ in
-            self?.code = code
-            self?.startPairingIfReady()
+        server.beginPairing { [weak self] oldCode, _ in
+            self?.server.beginPairing { [weak self] freshCode, _ in
+                guard let self else { return }
+                guard freshCode != oldCode else {
+                    self.result = "Refreshing did not rotate the pairing code"
+                    return
+                }
+                self.code = freshCode
+                self.startPairingIfReady()
+            }
         }
         let deadline = Date().addingTimeInterval(15)
         while result == nil && Date() < deadline {

@@ -1,17 +1,17 @@
 # UI acceptance checklist — Mac companion + iPhone
 
-Use this after the pending Hilium-inspired UI consistency pass. This is a **manual review for the current prototype**, not a claim that each interaction has been tested on a physical device. Record which build you used, and take screenshots of visual inconsistencies where helpful. Hide the connection passcode, IP address, and paired-device names in screenshots you share.
+The Mac menu bar layout was visually accepted on October 30, 2026; the Settings window is the next UI focus. This is a **manual review for the current prototype**, not a claim that each interaction has been tested on a physical device. Record which build you used, and take screenshots of visual inconsistencies where helpful. Hide the connection passcode, IP address, and paired-device names in screenshots you share.
 
 ## Mac companion
 
 - [ ] Open **Stats Companion** from Xcode. The menu bar icon appears once; clicking it consistently opens a compact status panel. Click outside and open it again.
-- [ ] Passcode is readable in both light/dark appearances; copy button has a clear hit target, tooltip/VoiceOver label, and short **Copied** confirmation. Countdown changes without moving other rows.
-- [ ] With no iPhone connected, the network row reports discoverability/port and the device row says **No devices connected**. A failed listener should show a warning and useful explanation, not a green success state.
+- [ ] Passcode is readable in both light/dark appearances; copy and refresh icons have clear hit targets and VoiceOver labels. Copy shows short **Copied** feedback. Refresh generates a **different** five-digit code with a new five-minute countdown; the previous code no longer pairs.
+- [ ] With no iPhone connected, the network row reports discoverability/port and the device row says **No devices connected**. The yellow device icon is centered with its text while the network icon remains aligned with the start of multiline status. A failed listener should show a warning and useful explanation, not a green success state.
 - [ ] Compare with the Hilium menu: the Stats panel should now be about **312 points wide**, with smaller passcode digits, 13-point action labels, tight separators and short rows. Hovering Website, About, Changelog, Settings and Quit, or selecting with **Up/Down**, should show a **blue selection with white text/icons/shortcuts** instead of a gray background. Test **Return**, **Space**, **Escape**, **⌘,** and **⌘Q** (Quit last).
 - [ ] **Settings** opens in front. The passcode header, network/device information, action rows, appearance controls, paired phones, and footer fit within the window without clipping. Resize/scroll on a small desktop area.
 - [ ] **Changelog** opens and **Back to Settings** returns. **About** comes to the foreground. Website and Feedback & Support open their expected browser pages.
 - [ ] **Dock** and **Menu Bar** controls work independently; one remains visible. Check Settings accessibility via Dock before hiding the menu bar icon. Restore your preferred visibility when finished.
-- [ ] **Open at login** accurately reflects status; if macOS requires approval or installation-location changes, instructions are readable. Restore your preferred setting.
+- [ ] **Open at login** stays visually neutral when the pointer is over its label or switch: no blue row fill and no forced white text. The switch is aligned with the **right edge** of the menu actions and remains clickable. Arrow-key navigation should show a thin focus outline; **Space/Return** toggles it. If macOS requires approval or installation-location changes, instructions are readable. Restore your preferred setting.
 - [ ] **Check for updates** displays checking, success, and retry or availability states as appropriate. Do not install an update just for this UI test.
 - [ ] With a phone paired, the connection row shows the phone as active only while it is fetching stats. Settings lists it; the Revoke action is available (exercise only when you intend to re-pair).
 
@@ -29,4 +29,4 @@ Use this after the pending Hilium-inspired UI consistency pass. This is a **manu
 
 When something differs from the intended layout, send the **screen**, **appearance** (light/dark), **device or window size**, **steps to reproduce**, **actual result**, and **expected result**. Screenshot comparisons with Hilium are especially useful for exact padding, font size, order, shadow, blur, and separators.
 
-After review, any needed fixes can be made and rechecked before the requested **caveman-commit** and push.
+Use any remaining findings to guide the next Settings-window and physical-iPhone testing round.

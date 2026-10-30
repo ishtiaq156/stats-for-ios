@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-private enum MenuAction: Int, CaseIterable {
+private enum MenuAction {
     case copyPasscode
     case refreshPasscode
     case checkUpdates
@@ -62,8 +62,13 @@ struct CompanionMenu: View {
             CompanionToggleRow(
                 title: "Open at login",
                 isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
-                highlighted: highlighted(.openAtLogin),
-                onHover: { setHover(.openAtLogin, $0) }
+                keyboardSelected: keyboardSelection == .openAtLogin,
+                onHover: { hovering in
+                    if hovering {
+                        hoveredAction = nil
+                        keyboardSelection = nil
+                    }
+                }
             )
             if let error = model.loginError {
                 Text(error).font(.caption).foregroundStyle(.red)
@@ -128,6 +133,7 @@ struct CompanionMenu: View {
                         .monospacedDigit()
                         .textSelection(.enabled)
                     Spacer()
+                    refreshPasscodeButton
                     CompanionRow(
                         title: copiedPasscode ? "Copied" : "Copy passcode",
                         symbol: copiedPasscode ? "checkmark" : "text.document.fill",
@@ -140,14 +146,7 @@ struct CompanionMenu: View {
                     Text("Pairing paused")
                         .font(.headline)
                     Spacer()
-                    CompanionRow(
-                        title: "Refresh passcode",
-                        symbol: "arrow.clockwise",
-                        iconOnly: true,
-                        highlighted: highlighted(.refreshPasscode),
-                        onHover: { setHover(.refreshPasscode, $0) }
-                    ) { perform(.refreshPasscode) }
-                    .frame(width: 30)
+                    refreshPasscodeButton
                 } else {
                     Text("Generating passcode…").foregroundStyle(.secondary)
                     Spacer()
@@ -158,6 +157,17 @@ struct CompanionMenu: View {
         .padding(.horizontal, 7)
         .padding(.top, 6)
         .padding(.bottom, 7)
+    }
+
+    private var refreshPasscodeButton: some View {
+        CompanionRow(
+            title: "Refresh passcode",
+            symbol: "arrow.clockwise",
+            iconOnly: true,
+            highlighted: highlighted(.refreshPasscode),
+            onHover: { setHover(.refreshPasscode, $0) }
+        ) { perform(.refreshPasscode) }
+        .frame(width: 30)
     }
 
     private var statusSection: some View {
@@ -181,11 +191,11 @@ struct CompanionMenu: View {
     }
 
     private func statusRow(_ symbol: String, color: Color, text: String, muted: Bool = false) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: muted ? .center : .top, spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(color)
-                .frame(width: 18)
+                .frame(width: 18, alignment: .center)
             Text(text)
                 .font(.system(size: 13))
                 .foregroundStyle(muted ? Color.secondary : Color.primary)
@@ -233,8 +243,11 @@ struct CompanionMenu: View {
 
     private var navigableActions: [MenuAction] {
         var result: [MenuAction] = []
-        if model.pairingCode != nil { result.append(.copyPasscode) }
-        if model.pairingLocked { result.append(.refreshPasscode) }
+        if model.pairingCode != nil {
+            result += [.refreshPasscode, .copyPasscode]
+        } else if model.pairingLocked {
+            result.append(.refreshPasscode)
+        }
         if model.updateState != .checking && model.updateState != .upToDate {
             result.append(.checkUpdates)
         }
@@ -388,22 +401,26 @@ private struct CompanionRow: View {
 private struct CompanionToggleRow: View {
     let title: String
     @Binding var isOn: Bool
-    let highlighted: Bool
+    let keyboardSelected: Bool
     let onHover: (Bool) -> Void
 
     var body: some View {
-        Toggle(isOn: $isOn) {
+        HStack(spacing: 8) {
             Text(title)
                 .font(.system(size: 13))
-                .foregroundStyle(highlighted ? Color(nsColor: .selectedMenuItemTextColor) : Color.primary)
+            Spacer(minLength: 8)
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .accessibilityLabel(title)
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
         .padding(.horizontal, 7)
         .frame(height: 28)
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: 5)
-                .fill(highlighted ? Color(nsColor: .selectedContentBackgroundColor) : .clear)
+                .strokeBorder(keyboardSelected ? Color(nsColor: .keyboardFocusIndicatorColor) : .clear, lineWidth: 1)
+                .allowsHitTesting(false)
         )
         .onHover(perform: onHover)
     }
