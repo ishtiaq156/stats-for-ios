@@ -24,7 +24,7 @@ private final class Runner {
                 self.revokedEnrollment = nil
                 self.checkRevoked(enrollment)
             },
-            onPairingEnded: {},
+            onPairingEnded: { _ in },
             phones: PhoneRegistry(service: service)
         )
     }

@@ -4,12 +4,18 @@ import Network
 import Security
 
 final class MetricServer: NSObject, NetServiceDelegate {
+    enum PairingEndReason {
+        case used
+        case expired
+        case exhausted
+    }
+
     private let snapshot: () -> MetricSnapshot
     private let history: () -> [MetricSnapshot]
     private let onPort: (UInt16) -> Void
     private let onDiscovery: (Bool, String?) -> Void
     private let onPhones: ([PairedPhone]) -> Void
-    private let onPairingEnded: () -> Void
+    private let onPairingEnded: (PairingEndReason) -> Void
     private let queue = DispatchQueue(label: "StatsForIOS.MetricServer")
     private var listener: NWListener?
     private var advertiser: NetService?
@@ -29,7 +35,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
          onPort: @escaping (UInt16) -> Void,
          onDiscovery: @escaping (Bool, String?) -> Void,
          onPhones: @escaping ([PairedPhone]) -> Void,
-         onPairingEnded: @escaping () -> Void,
+         onPairingEnded: @escaping (PairingEndReason) -> Void,
          phones: PhoneRegistry = PhoneRegistry()) {
         self.snapshot = snapshot
         self.history = history
@@ -60,7 +66,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
             DispatchQueue.main.async { completion(code, session.expires) }
             self.queue.asyncAfter(deadline: .now() + 300) { [weak self] in
                 guard let self, self.pairingSession?.id == session.id else { return }
-                self.endPairing()
+                self.endPairing(reason: .expired)
             }
         }
     }
@@ -249,7 +255,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
                     connection.cancel()
                     return
                 }
-                self.endPairing()
+                self.endPairing(reason: .used)
                 self.publishPhones()
                 connection.send(content: SecurePacket.frame(sealed), completion: .contentProcessed { _ in connection.cancel() })
             }
@@ -275,17 +281,19 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     private func failPairingAttempt(_ id: UUID) {
         guard var session = pairingSession, session.handshake == id else { return }
-        if session.attempts >= 3 || session.expires <= Date() {
-            endPairing()
+        if session.attempts >= 3 {
+            endPairing(reason: .exhausted)
+        } else if session.expires <= Date() {
+            endPairing(reason: .expired)
         } else {
             session.handshake = nil
             pairingSession = session
         }
     }
 
-    private func endPairing() {
+    private func endPairing(reason: PairingEndReason) {
         pairingSession = nil
-        DispatchQueue.main.async { [onPairingEnded] in onPairingEnded() }
+        DispatchQueue.main.async { [onPairingEnded] in onPairingEnded(reason) }
     }
 
     private func publishPhones() {
