@@ -60,14 +60,14 @@ scripts/test-pairing-smoke.sh
 
 XcodeGen reads [`project.yml`](project.yml). The shared Swift package includes a prebuilt SPAKE2 XCFramework. To rebuild it from pinned Rust dependencies, use `scripts/build-spake2.sh` and the [Rust dependency notices](Native/Spake2Bridge/THIRD_PARTY_NOTICES.md).
 
-The app icons, menu bar status icon, and About artwork are generated from one original CoreGraphics drawing (not an SF Symbol). To regenerate the artwork for both platforms, run:
+The app icons, menu bar status icon, and About artwork are generated from one original CoreGraphics drawing (not an SF Symbol). The native unavailable-Help alert explicitly loads the same compiled macOS app icon. To regenerate the artwork for both platforms, run:
 
 ```sh
 swift scripts/generate-app-icons.swift
 xcodegen generate
 ```
 
-The generated Xcode project includes explicit shared **Stats** and **StatsCompanion** schemes. The in-app Changelog uses Apple's native soft scroll-edge effect on macOS 26+, and glass navigation buttons where supported. The Changelog title uses the regular system font, matching the rest of Settings. The Mac About window shows the app version, build, and © 2026 Ishtiaq Ul Haq Syed. All Rights Reserved. See the [UI acceptance checklist](docs/UI-TEST.md) for interactions that still require manual verification.
+The generated Xcode project includes explicit shared **Stats** and **StatsCompanion** schemes. The in-app Changelog uses Apple's native soft scroll-edge effect on macOS 26+, and glass navigation buttons where supported. The Changelog title uses the regular system font, matching the rest of Settings. The native Help alert keeps its unavailable-help message and explicitly uses the application's blue icon. The Mac About window shows the app version, build, and © 2026 Ishtiaq Ul Haq Syed. All Rights Reserved. See the [UI acceptance checklist](docs/UI-TEST.md) for interactions that still require manual verification.
 
 ## How it works
 

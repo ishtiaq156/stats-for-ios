@@ -277,6 +277,19 @@ struct StatsCompanionApp: App {
         Settings {
             CompanionSettings(model: model)
         }
+        .commands {
+            CommandGroup(replacing: .help) {
+                Button {
+                    CompanionUnavailableHelp.show()
+                } label: {
+                    Label("StatsCompanion Help", systemImage: "lightbulb")
+                }
+                // macOS hides custom command icons unless explicitly enabled.
+                // Keep the familiar bulb in the Help menu, while the alert
+                // itself shows the app's own blue icon.
+                .labelStyle(.titleAndIcon)
+            }
+        }
         #if DEBUG
         WindowGroup("Settings Preview") {
             if ProcessInfo.processInfo.environment["STATS_UI_PREVIEW"] == "1" {
@@ -285,6 +298,9 @@ struct StatsCompanionApp: App {
                 EmptyView()
             }
         }
+        // Debug-only preview should not contribute File > New Window or
+        // other document-style menu commands when the Dock is visible.
+        .commandsRemoved()
         #endif
     }
 }

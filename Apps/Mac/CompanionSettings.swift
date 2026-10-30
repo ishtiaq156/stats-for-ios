@@ -798,7 +798,8 @@ private struct CompanionRelease: Identifiable {
             "Added Tab and Shift-Tab navigation to the menu and Settings, with keyboard-focus highlighting that clears after pointer input.",
             "Applied the original blue chart artwork to the Mac menu bar and Dock and the iPhone app icon.",
             "Added a copy icon beside the manual connection address and aligned the Changelog title with the system font.",
-            "Used native macOS scroll-edge fading for Changelog and fixed a menu bar visibility update loop."
+            "Used native macOS scroll-edge fading for Changelog and fixed a menu bar visibility update loop.",
+            "Kept the familiar Help menu lightbulb and showed the Stats icon in the native unavailable-Help alert."
         ]),
         .init(version: "0.3.1", date: "October 30, 2026", changes: [
             "Refined the menu with pointer and keyboard row highlights, a persistent passcode, and clearer network status.",
