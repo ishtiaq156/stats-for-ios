@@ -1,15 +1,18 @@
 # Stats for iOS
 
+<img src="Apps/Mac/Assets.xcassets/StatsBrandMark.imageset/StatsBrandMark.png" width="88" alt="Stats blue activity chart logo" />
+
 **See your Mac's activity from your iPhone.** Stats is a native iPhone dashboard paired with a lightweight macOS menu bar companion. Both apps communicate on your local network without an account or cloud service.
 
 > [!NOTE]
-> **Early prototype.** The macOS menu bar interface has been reviewed hands-on; the Settings window is next. Automated pairing tests pass, but the current five-digit passcode flow still needs an end-to-end physical-iPhone check before a public release.
+> **Early prototype.** The compact macOS menu and Settings interface have been iterated through hands-on UI feedback. Automated pairing tests pass, but the five-digit passcode flow still needs an end-to-end physical-iPhone check and independent protocol review before a public release.
 
 ## What it does
 
 - **Live Mac activity:** CPU utilization, memory usage, free and total startup-disk space, and network download/upload rates.
 - **iPhone overview and charts:** Four metric cards, detail screens, recent readings, and clear sample, connecting, live, and disconnected states.
-- **Compact Mac menu:** Network and connected-phone status, a five-digit passcode with copy, refresh, and expiry, Open at login, updates, and Settings.
+- **Compact Mac menu and Settings:** Network and connected-phone status, a five-digit passcode with refresh, copy, and expiry, Open at login, update checks, Dock/Menu Bar visibility, and paired-phone management. Tab/Shift-Tab navigate controls in both views; Settings shows its native keyboard-focus indicator when tabbing and clears the keyboard-navigation presentation after a pointer click.
+- **Matching app icons:** The iPhone Home Screen, Mac Dock, menu bar, and Mac About panel share the original blue activity-chart artwork.
 - **Local pairing:** Bonjour discovery plus manual IP/port fallback; a different encrypted credential is issued to every paired phone, which can be revoked independently.
 - **Battery data where available:** Included in the Mac's snapshot; a dedicated battery card is not yet part of the iPhone overview.
 
@@ -29,10 +32,10 @@ The project takes inspiration from [Stats](https://github.com/exelban/stats) for
 
 1. Open **`StatsForIOS.xcodeproj`** in Xcode. Run the **`StatsCompanion`** scheme on your Mac and open **Stats Companion** from the menu bar.
 2. Select the **`Stats`** scheme, choose your iPhone, configure your **Personal Team** for signing, and run it. Allow **Local Network** access when prompted.
-3. On iPhone, choose **Connect a Mac** (or **Add Mac**). Select the discovered Mac, then enter the **five-digit passcode** shown at the top of the Mac menu. If discovery fails, expand **Connect using IP address** and enter the Mac's local IP, the advertised port, and its passcode.
+3. On iPhone, choose **Connect a Mac** (or **Add Mac**). Select the discovered Mac, then enter the **five-digit passcode** shown at the top of the Mac menu. If discovery fails, expand **Connect using IP address**; click the **info icon beside Network status** in the companion's Settings and use the circular copy icon beside the local address and port, then enter the passcode.
 4. View live CPU, Memory, Storage, and Network values. Tap any card for details and recent history.
 
-The passcode lasts five minutes; the **refresh** icon generates a different code and immediately invalidates the old one. One successful pairing also consumes the code. Three failed attempts pause pairing until refresh. The Mac remembers each paired phone, and **Settings** lets you revoke individual access.
+The passcode lasts five minutes; the **refresh** icon (to the left of Copy in both Mac views) generates a different code and invalidates the old one. The old digits remain visible until the replacement is available, avoiding UI flicker. One successful pairing also consumes the code. Three failed attempts pause pairing until refresh. The Mac remembers each paired phone, and **Settings** lets you revoke individual access.
 
 > [!TIP]
 > Stats Companion tries TCP port **8888** first and chooses an available port if it is occupied. Use the port shown in the menu or Settings for manual pairing. For **Open at login**, install the built Mac app in Applications before enabling the setting.
@@ -56,6 +59,15 @@ scripts/test-pairing-smoke.sh
 ```
 
 XcodeGen reads [`project.yml`](project.yml). The shared Swift package includes a prebuilt SPAKE2 XCFramework. To rebuild it from pinned Rust dependencies, use `scripts/build-spake2.sh` and the [Rust dependency notices](Native/Spake2Bridge/THIRD_PARTY_NOTICES.md).
+
+The app icons, menu bar status icon, and About artwork are generated from one original CoreGraphics drawing (not an SF Symbol). To regenerate the artwork for both platforms, run:
+
+```sh
+swift scripts/generate-app-icons.swift
+xcodegen generate
+```
+
+The generated Xcode project includes explicit shared **Stats** and **StatsCompanion** schemes. The in-app Changelog uses Apple's native soft scroll-edge effect on macOS 26+, and glass navigation buttons where supported. The Changelog title uses the regular system font, matching the rest of Settings. The Mac About window shows the app version, build, and © 2026 Ishtiaq Ul Haq Syed. All Rights Reserved. See the [UI acceptance checklist](docs/UI-TEST.md) for interactions that still require manual verification.
 
 ## How it works
 

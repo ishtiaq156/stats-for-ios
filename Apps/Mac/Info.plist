@@ -8,5 +8,7 @@
     <array>
         <string>_macactivity._tcp</string>
     </array>
+    <key>NSHumanReadableCopyright</key>
+    <string>© 2026 Ishtiaq Ul Haq Syed. All Rights Reserved.</string>
 </dict>
 </plist>

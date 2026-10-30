@@ -6,6 +6,98 @@ struct CompanionSettings: View {
     @State private var copiedPasscode = false
     @State private var copyFeedbackTask: Task<Void, Never>?
     @State private var phoneToRevoke: PairedPhone?
+    @State private var showingConnectionAddress = false
+    @State private var keyboardNavigationActive = false
+    @FocusState private var settingsFocus: SettingsFocus?
+
+    private enum SettingsFocus: Hashable {
+        case copyPasscode, refreshPasscode, connectionAddress, updates
+        case website, about, changelog, dock, menuBar, login
+        case quit, feedback, changelogBack
+        case revoke(UUID)
+    }
+
+    private var homeFocusOrder: [SettingsFocus] {
+        var actions: [SettingsFocus] = []
+        if model.pairingCode != nil {
+            actions += [.refreshPasscode, .copyPasscode]
+        } else if model.pairingLocked {
+            actions.append(.refreshPasscode)
+        }
+        if model.localAddress != nil { actions.append(.connectionAddress) }
+        switch model.updateState {
+        case .idle, .available, .failed: actions.append(.updates)
+        case .checking, .upToDate: break
+        }
+        actions += [.website, .about, .changelog]
+        if !(model.dockVisible && !model.menuBarVisible) { actions.append(.dock) }
+        if !(model.menuBarVisible && !model.dockVisible) { actions.append(.menuBar) }
+        actions.append(.login)
+        actions += model.pairedPhones.map { .revoke($0.id) }
+        actions += [.quit, .feedback]
+        return actions
+    }
+
+    private func moveSettingsFocus(backward: Bool) {
+        let actions: [SettingsFocus] = model.settingsPage == .changelog
+            ? [.changelogBack] : homeFocusOrder
+        guard !actions.isEmpty else { return }
+        guard let settingsFocus, let index = actions.firstIndex(of: settingsFocus) else {
+            self.settingsFocus = backward ? actions.last : actions.first
+            return
+        }
+        let next = (index + (backward ? -1 : 1) + actions.count) % actions.count
+        self.settingsFocus = actions[next]
+    }
+
+    /// Return and Space follow the same focus order as Tab, even when macOS
+    /// doesn't designate an individual plain-style button as the default.
+    /// Pointer, VoiceOver, and native button actions remain unchanged.
+    private func activateFocusedSetting() -> Bool {
+        let actions: [SettingsFocus] = model.settingsPage == .changelog
+            ? [.changelogBack] : homeFocusOrder
+        guard keyboardNavigationActive,
+              !showingConnectionAddress, phoneToRevoke == nil,
+              let focus = settingsFocus, actions.contains(focus) else { return false }
+
+        switch focus {
+        case .refreshPasscode:
+            refreshPasscode()
+        case .copyPasscode:
+            guard let code = model.pairingCode else { return false }
+            copyPasscode(code)
+        case .connectionAddress:
+            showingConnectionAddress = true
+        case .updates:
+            if case .available(_, let url) = model.updateState {
+                NSWorkspace.shared.open(url)
+            } else {
+                model.checkForUpdates()
+            }
+        case .website:
+            open("https://github.com/ishtiaq156/stats-for-ios")
+        case .about:
+            showAbout()
+        case .changelog:
+            model.settingsPage = .changelog
+        case .dock:
+            model.setDockVisible(!model.dockVisible)
+        case .menuBar:
+            model.setMenuBarVisible(!model.menuBarVisible)
+        case .login:
+            model.setOpenAtLogin(!model.openAtLogin)
+        case .quit:
+            NSApp.terminate(nil)
+        case .feedback:
+            open("https://github.com/ishtiaq156/stats-for-ios/issues/new")
+        case .changelogBack:
+            model.settingsPage = .home
+        case .revoke(let id):
+            guard let phone = model.pairedPhones.first(where: { $0.id == id }) else { return false }
+            phoneToRevoke = phone
+        }
+        return true
+    }
 
     var body: some View {
         Group {
@@ -14,9 +106,36 @@ struct CompanionSettings: View {
             case .changelog: changelogPage
             }
         }
-        .frame(width: 460, height: min(760, NSScreen.main?.visibleFrame.height ?? 760))
+        // The native titlebar adds roughly 28 points to the content height.
+        .frame(width: 460, height: min(645, max(420, (NSScreen.main?.visibleFrame.height ?? 673) - 28)))
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.72))
         .background(.regularMaterial)
         .background(SettingsWindowConfigurator())
+        .background(CompanionTabNavigation(
+            onTab: { backward in
+                guard !showingConnectionAddress, phoneToRevoke == nil else { return false }
+                keyboardNavigationActive = true
+                moveSettingsFocus(backward: backward)
+                return true
+            },
+            onActivate: { activateFocusedSetting() },
+            onPointer: {
+                // Match native keyboard-versus-pointer focus presentation:
+                // mouse interaction keeps control functionality, but clears
+                // the tab-navigation ring until the next Tab/Shift-Tab.
+                keyboardNavigationActive = false
+                settingsFocus = nil
+            }
+        ))
+        .onAppear {
+            keyboardNavigationActive = false
+            settingsFocus = nil
+        }
+        .onChange(of: model.settingsPage) { _, page in
+            settingsFocus = keyboardNavigationActive
+                ? (page == .changelog ? .changelogBack : .changelog)
+                : nil
+        }
         .alert("Revoke phone access?", isPresented: Binding(
             get: { phoneToRevoke != nil },
             set: { if !$0 { phoneToRevoke = nil } }
@@ -32,104 +151,95 @@ struct CompanionSettings: View {
         .onDisappear {
             copyFeedbackTask?.cancel()
             copyFeedbackTask = nil
+            keyboardNavigationActive = false
+            settingsFocus = nil
         }
     }
 
     private var settingsHome: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                passcodeHeader
-                    .padding(.bottom, 18)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 12) {
+                    passcodeHeader
+                        .padding(.bottom, 18)
 
-                card {
-                    networkStatusRow
-                    connectionStatusRow
-                    if let address = model.localAddress {
-                        Divider().padding(.leading, 34)
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            Text("Manual address")
-                            Spacer()
-                            Text(address)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .multilineTextAlignment(.trailing)
+                    card {
+                        networkStatusRow
+                        connectionStatusRow
+                    }
+
+                    card {
+                        updateRow
+                        cardDivider
+                        actionRow("Website") {
+                            open("https://github.com/ishtiaq156/stats-for-ios")
                         }
-                        .font(.system(size: 12))
-                        .padding(.horizontal, 11)
-                        .frame(minHeight: 28)
+                        .focused($settingsFocus, equals: .website)
+                        cardDivider
+                        actionRow("About") { showAbout() }
+                            .focused($settingsFocus, equals: .about)
+                    }
+
+                    card {
+                        actionRow("Changelog", symbol: "chevron.right", height: 50) {
+                            model.settingsPage = .changelog
+                        }
+                        .focused($settingsFocus, equals: .changelog)
+                    }
+
+                    card {
+                        settingsToggle(
+                            "Dock",
+                            detail: "Show Stats Companion in the Dock alongside other apps",
+                            isOn: Binding(get: { model.dockVisible }, set: { model.setDockVisible($0) }),
+                            disabled: model.dockVisible && !model.menuBarVisible,
+                            focus: .dock
+                        )
+                        cardDivider
+                        settingsToggle(
+                            "Menu Bar",
+                            detail: "Keep Stats in the Dock when this is off",
+                            isOn: Binding(get: { model.menuBarVisible }, set: { model.setMenuBarVisible($0) }),
+                            disabled: model.menuBarVisible && !model.dockVisible,
+                            focus: .menuBar
+                        )
+                        cardDivider
+                        settingsToggle(
+                            "Open at login",
+                            detail: nil,
+                            isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
+                            disabled: false,
+                            focus: .login
+                        )
+                    }
+                    if let error = model.visibilityError ?? model.loginError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                    }
+
+                    if !model.pairedPhones.isEmpty {
+                        pairedPhonesSection
                     }
                 }
-
-                card {
-                    updateRow
-                    cardDivider
-                    actionRow("Website") {
-                        open("https://github.com/ishtiaq156/stats-for-ios")
-                    }
-                    cardDivider
-                    actionRow("About") { showAbout() }
-                }
-
-                card {
-                    actionRow("Changelog", symbol: "chevron.right") {
-                        model.settingsPage = .changelog
-                    }
-                }
-
-                card {
-                    settingsToggle(
-                        "Dock",
-                        detail: "Show Stats Companion in the Dock alongside other apps",
-                        isOn: Binding(get: { model.dockVisible }, set: { model.setDockVisible($0) }),
-                        disabled: model.dockVisible && !model.menuBarVisible
-                    )
-                    cardDivider
-                    settingsToggle(
-                        "Menu Bar",
-                        detail: "Stats Companion stays available in the Dock when this is off",
-                        isOn: Binding(get: { model.menuBarVisible }, set: { model.setMenuBarVisible($0) }),
-                        disabled: model.menuBarVisible && !model.dockVisible
-                    )
-                    cardDivider
-                    settingsToggle(
-                        "Open at login",
-                        detail: nil,
-                        isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
-                        disabled: false
-                    )
-                }
-                if let error = model.visibilityError ?? model.loginError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                }
-
-                pairedPhonesSection
-
-                HStack {
-                    Button("Quit Stats Companion") { NSApp.terminate(nil) }
-                    Spacer()
-                    Button("Feedback & Support") {
-                        open("https://github.com/ishtiaq156/stats-for-ios/issues/new")
-                    }
-                }
-                .buttonStyle(.bordered)
-                .padding(.top, 14)
+                .padding(.horizontal, 20)
+                .padding(.top, 48)
+                .padding(.bottom, 10)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 72)
-            .padding(.bottom, 20)
+            .scrollIndicators(.hidden)
+
+            settingsFooter
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 13)
         }
-        .scrollIndicators(.hidden)
     }
 
     private var passcodeHeader: some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 10) {
+        VStack(spacing: 5) {
+            HStack(spacing: 7) {
                 Text("Passcode")
                 if let expiry = model.pairingExpires {
                     Text("·")
@@ -145,25 +255,46 @@ struct CompanionSettings: View {
             HStack(spacing: 10) {
                 if let code = model.pairingCode {
                     Text(code)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(size: 34, weight: .bold))
                         .monospacedDigit()
                         .textSelection(.enabled)
+                        .foregroundStyle(.primary)
+                    Button {
+                        refreshPasscode()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .frame(width: 17, height: 17)
+                    }
+                    .companionGlassButtonStyle()
+                    .buttonBorderShape(.circle)
+                    .controlSize(.regular)
+                    .help("Refresh passcode")
+                    .accessibilityLabel("Refresh passcode")
+                    .focusable()
+                    .focusEffectDisabled(!keyboardNavigationActive)
+                    .focused($settingsFocus, equals: .refreshPasscode)
                     Button {
                         copyPasscode(code)
                     } label: {
-                        Image(systemName: copiedPasscode ? "checkmark" : "text.document.fill")
-                            .font(.system(size: 14))
-                            .frame(width: 30, height: 30)
+                        Image(systemName: copiedPasscode ? "checkmark" : "document.on.document")
+                            .frame(width: 17, height: 17)
                     }
-                    .buttonStyle(.bordered)
-                    .clipShape(Circle())
+                    .companionGlassButtonStyle()
+                    .buttonBorderShape(.circle)
+                    .controlSize(.regular)
                     .help(copiedPasscode ? "Passcode copied" : "Copy passcode")
                     .accessibilityLabel(copiedPasscode ? "Passcode copied" : "Copy passcode")
+                    .focusable()
+                    .focusEffectDisabled(!keyboardNavigationActive)
+                    .focused($settingsFocus, equals: .copyPasscode)
                 } else if model.pairingLocked {
                     Text("Pairing paused")
                         .font(.headline)
-                    Button("New code") { model.refreshPasscode() }
-                        .buttonStyle(.bordered)
+                    Button("New code") { refreshPasscode() }
+                        .companionGlassButtonStyle()
+                        .focusable()
+                        .focusEffectDisabled(!keyboardNavigationActive)
+                        .focused($settingsFocus, equals: .refreshPasscode)
                 } else {
                     Text("Generating passcode…")
                         .foregroundStyle(.secondary)
@@ -174,35 +305,110 @@ struct CompanionSettings: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var settingsFooter: some View {
+        HStack {
+            Button("Quit Stats Companion") { NSApp.terminate(nil) }
+                .font(.system(size: 12, weight: .medium))
+                .companionGlassButtonStyle()
+                .buttonBorderShape(.capsule)
+                .controlSize(.large)
+                .focusable()
+                .focusEffectDisabled(!keyboardNavigationActive)
+                .focused($settingsFocus, equals: .quit)
+
+            Spacer()
+
+            Button("Feedback & Support") {
+                open("https://github.com/ishtiaq156/stats-for-ios/issues/new")
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .companionGlassButtonStyle(prominent: true)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .tint(.blue)
+            .focusable()
+            .focusEffectDisabled(!keyboardNavigationActive)
+            .focused($settingsFocus, equals: .feedback)
+        }
+    }
+
     private var networkStatusRow: some View {
         let network = CompanionConnectionPresentation.network(model)
-        return HStack(alignment: .top, spacing: 10) {
+        return HStack(alignment: .center, spacing: 10) {
             Image(systemName: network.symbol)
                 .foregroundStyle(network.color)
                 .font(.system(size: 21))
+                .frame(width: 22)
             Text(network.text)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
+            if let address = model.localAddress {
+                Button {
+                    showingConnectionAddress = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.plain)
+                .help("Manual connection address")
+                .accessibilityLabel("Show manual connection address")
+                .focusable()
+                .focusEffectDisabled(!keyboardNavigationActive)
+                .focused($settingsFocus, equals: .connectionAddress)
+                .popover(isPresented: $showingConnectionAddress, arrowEdge: .trailing) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Manual connection")
+                            .font(.headline)
+                        Text("Use this address if your iPhone cannot find the Mac automatically.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Text(address)
+                                .font(.system(.body, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Button {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(address, forType: .string)
+                                showingConnectionAddress = false
+                            } label: {
+                                Image(systemName: "document.on.document")
+                                    .frame(width: 17, height: 17)
+                            }
+                            .companionGlassButtonStyle()
+                            .buttonBorderShape(.circle)
+                            .controlSize(.regular)
+                            .accessibilityLabel("Copy manual connection address")
+                            .help("Copy address")
+                        }
+                    }
+                    .padding(16)
+                    .frame(width: 265, alignment: .leading)
+                }
+            }
         }
         .font(.system(size: 13))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
     }
 
     private var connectionStatusRow: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             let active = model.pairedPhones.filter(\.isConnected)
-            Image(systemName: "iphone.circle.fill")
-                .foregroundStyle(active.isEmpty ? Color.secondary : Color.green)
+            Image(systemName: active.isEmpty ? CompanionConnectionPresentation.noDevices.symbol : "iphone.circle.fill")
+                .foregroundStyle(active.isEmpty ? CompanionConnectionPresentation.noDevices.color : Color.green)
                 .font(.system(size: 21))
+                .frame(width: 22)
             Text(active.isEmpty ? "No devices connected" : active.map(\.name).joined(separator: ", "))
-                .foregroundStyle(active.isEmpty ? .secondary : .primary)
+                .foregroundStyle(active.isEmpty ? Color.secondary : Color.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .font(.system(size: 13))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
     }
 
     private var updateRow: some View {
@@ -210,6 +416,7 @@ struct CompanionSettings: View {
             switch model.updateState {
             case .idle:
                 actionRow("Check for updates") { model.checkForUpdates() }
+                    .focused($settingsFocus, equals: .updates)
             case .checking:
                 statusActionRow("Checking…", spinner: true)
             case .upToDate:
@@ -218,10 +425,12 @@ struct CompanionSettings: View {
                 actionRow("Download version \(version)", symbol: "arrow.down.circle") {
                     NSWorkspace.shared.open(url)
                 }
+                .focused($settingsFocus, equals: .updates)
             case .failed:
                 actionRow("Couldn’t check · Retry", symbol: "exclamationmark.circle") {
                     model.checkForUpdates()
                 }
+                .focused($settingsFocus, equals: .updates)
             }
         }
     }
@@ -257,6 +466,9 @@ struct CompanionSettings: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             Button("Revoke", role: .destructive) { phoneToRevoke = phone }
                                 .buttonStyle(.bordered)
+                                .focusable()
+                                .focusEffectDisabled(!keyboardNavigationActive)
+                                .focused($settingsFocus, equals: .revoke(phone.id))
                         }
                         .padding(10)
                         if phone.id != model.pairedPhones.last?.id { cardDivider }
@@ -268,10 +480,43 @@ struct CompanionSettings: View {
     }
 
     private var changelogPage: some View {
-        VStack(spacing: 0) {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 34) {
+                ForEach(CompanionRelease.notes) { release in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Stats Companion \(release.version)")
+                            .font(.system(size: 13, weight: .semibold))
+                        HStack(spacing: 7) {
+                            Image(systemName: "calendar")
+                                .foregroundStyle(.red)
+                            Text(release.date)
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.system(size: 13))
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(release.changes, id: \.self) { change in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Text("•")
+                                    Text(change)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .font(.system(size: 13))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .padding(.top, 3)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 25)
+        }
+        .scrollIndicators(.automatic)
+        .companionSoftScrollEdge {
             ZStack {
                 Text("Changelog")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(size: 34, weight: .bold))
                 HStack {
                     Button {
                         model.settingsPage = .home
@@ -280,57 +525,28 @@ struct CompanionSettings: View {
                             .font(.system(size: 14, weight: .semibold))
                             .frame(width: 30, height: 30)
                     }
-                    .buttonStyle(.bordered)
-                    .clipShape(Circle())
+                    .companionGlassButtonStyle()
+                    .buttonBorderShape(.circle)
+                    .controlSize(.large)
                     .accessibilityLabel("Back to Settings")
+                    .help("Back to Settings")
+                    .focusable()
+                    .focusEffectDisabled(!keyboardNavigationActive)
+                    .focused($settingsFocus, equals: .changelogBack)
                     Spacer()
                 }
                 .padding(.leading, 20)
             }
             .frame(height: 45)
-            .padding(.top, 70)
-            .padding(.bottom, 42)
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 34) {
-                    ForEach(CompanionRelease.notes) { release in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Stats Companion \(release.version)")
-                                .font(.system(size: 13, weight: .semibold))
-                            HStack(spacing: 7) {
-                                Image(systemName: "calendar")
-                                    .foregroundStyle(.red)
-                                Text(release.date)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .font(.system(size: 13))
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(release.changes, id: \.self) { change in
-                                    HStack(alignment: .top, spacing: 10) {
-                                        Text("•")
-                                        Text(change)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                    .font(.system(size: 13))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                            .padding(.top, 3)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 25)
-            }
-            .scrollIndicators(.visible)
+            .padding(.top, 43)
+            .padding(.bottom, 18)
         }
     }
 
     private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         VStack(spacing: 0, content: content)
             .frame(maxWidth: .infinity)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.7),
+            .background(Color(nsColor: .labelColor).opacity(0.055),
                         in: RoundedRectangle(cornerRadius: 12))
     }
 
@@ -338,9 +554,10 @@ struct CompanionSettings: View {
         Divider().padding(.leading, 10).padding(.trailing, 10)
     }
 
-    private func actionRow(_ title: String, symbol: String? = nil,
+    private func actionRow(_ title: String, symbol: String? = nil, height: CGFloat = 42,
                            action: @escaping () -> Void) -> some View {
-        SettingsActionRow(title: title, symbol: symbol, action: action)
+        SettingsActionRow(title: title, symbol: symbol, height: height,
+                          showsKeyboardFocus: keyboardNavigationActive, action: action)
     }
 
     private func statusActionRow(_ title: String, symbol: String? = nil,
@@ -361,8 +578,9 @@ struct CompanionSettings: View {
     }
 
     private func settingsToggle(_ title: String, detail: String?,
-                                isOn: Binding<Bool>, disabled: Bool) -> some View {
-        Toggle(isOn: isOn) {
+                                isOn: Binding<Bool>, disabled: Bool,
+                                focus: SettingsFocus) -> some View {
+        HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13))
@@ -372,19 +590,23 @@ struct CompanionSettings: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            Spacer(minLength: 8)
+            Toggle(title, isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(disabled)
+                .accessibilityLabel(title)
+                .focusable(!disabled)
+                .focusEffectDisabled(!keyboardNavigationActive)
+                .focused($settingsFocus, equals: focus)
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
-        .disabled(disabled)
-        .padding(.horizontal, 10)
-        .frame(minHeight: detail == nil ? 42 : 52)
+        .padding(.horizontal, 12)
+        .frame(minHeight: detail == nil ? 43 : 52)
     }
 
     private func showAbout() {
-        NSApp.activate(ignoringOtherApps: true)
-        NSApp.orderFrontStandardAboutPanel(nil)
-        NSApp.windows.first(where: { $0.title.localizedCaseInsensitiveContains("About") })?
-            .orderFrontRegardless()
+        CompanionAboutWindow.show()
     }
 
     private func open(_ address: String) {
@@ -403,11 +625,117 @@ struct CompanionSettings: View {
             copiedPasscode = false
         }
     }
+
+    private func refreshPasscode() {
+        copyFeedbackTask?.cancel()
+        copyFeedbackTask = nil
+        copiedPasscode = false
+        model.refreshPasscode()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func companionSoftScrollEdge<Bar: View>(@ViewBuilder bar: () -> Bar) -> some View {
+        if #available(macOS 26, *) {
+            safeAreaBar(edge: .top, spacing: 0, content: bar)
+                .scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            safeAreaInset(edge: .top, spacing: 0, content: bar)
+        }
+    }
+
+    @ViewBuilder
+    func companionGlassButtonStyle(prominent: Bool = false) -> some View {
+        if #available(macOS 26, *) {
+            if prominent {
+                buttonStyle(.glassProminent)
+            } else {
+                buttonStyle(.glass)
+            }
+        } else if prominent {
+            buttonStyle(.borderedProminent)
+        } else {
+            buttonStyle(.bordered)
+        }
+    }
+}
+
+@MainActor
+enum CompanionAboutWindow {
+    private static var aboutWindow: NSWindow?
+
+    static func show() {
+        if let aboutWindow {
+            NSApp.activate(ignoringOtherApps: true)
+            aboutWindow.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let size = NSSize(width: 280, height: 232)
+        let window = NSWindow(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "About Stats Companion"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .windowBackgroundColor
+        window.contentView = NSHostingView(rootView: CompanionAboutContent())
+        window.setContentSize(size)
+        window.center()
+        aboutWindow = window
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+}
+
+private struct CompanionAboutContent: View {
+    private let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.3.2"
+    private let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "5"
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 22)
+
+            Image("StatsBrandMark")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 54, height: 54)
+                .accessibilityHidden(true)
+
+            Text("Stats Companion")
+                .font(.system(size: 15, weight: .semibold))
+                .padding(.top, 10)
+            Text("Version \(version) (\(build))")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Text("© 2026 Ishtiaq Ul Haq Syed.")
+                .padding(.top, 14)
+            Text("All Rights Reserved.")
+                .padding(.top, 2)
+
+            Spacer(minLength: 18)
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(.secondary)
+        .frame(width: 280, height: 232)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
 }
 
 private struct SettingsActionRow: View {
     let title: String
     let symbol: String?
+    let height: CGFloat
+    let showsKeyboardFocus: Bool
     let action: () -> Void
     @State private var hovered = false
 
@@ -424,12 +752,14 @@ private struct SettingsActionRow: View {
             }
             .font(.system(size: 13))
             .padding(.horizontal, 10)
-            .frame(height: 42)
-            .background(hovered ? Color.primary.opacity(0.08) : .clear,
+            .frame(height: height)
+            .background(hovered ? Color.primary.opacity(0.055) : .clear,
                         in: RoundedRectangle(cornerRadius: 9))
             .contentShape(RoundedRectangle(cornerRadius: 9))
         }
         .buttonStyle(.plain)
+        .focusable()
+        .focusEffectDisabled(!showsKeyboardFocus)
         .onHover { hovered = $0 }
     }
 }
@@ -447,6 +777,7 @@ private struct SettingsWindowConfigurator: NSViewRepresentable {
 
     private func configure(_ window: NSWindow?) {
         guard let window else { return }
+        window.styleMask.insert(.fullSizeContentView)
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isOpaque = false
@@ -463,8 +794,11 @@ private struct CompanionRelease: Identifiable {
     static let notes: [CompanionRelease] = [
         .init(version: "0.3.2", date: "October 30, 2026", changes: [
             "Reworked the Mac Settings window around the passcode, connection status, actions, and visibility controls.",
-            "Refined the menu spacing, typography, separators, and passcode copy feedback.",
-            "Stopped a menu bar visibility update loop that could prevent the menu from opening."
+            "Refined compact menu spacing, typography, glass controls, and passcode copy and refresh feedback.",
+            "Added Tab and Shift-Tab navigation to the menu and Settings, with keyboard-focus highlighting that clears after pointer input.",
+            "Applied the original blue chart artwork to the Mac menu bar and Dock and the iPhone app icon.",
+            "Added a copy icon beside the manual connection address and aligned the Changelog title with the system font.",
+            "Used native macOS scroll-edge fading for Changelog and fixed a menu bar visibility update loop."
         ]),
         .init(version: "0.3.1", date: "October 30, 2026", changes: [
             "Refined the menu with pointer and keyboard row highlights, a persistent passcode, and clearer network status.",

@@ -8,8 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		13B8CB1E91B04301901DD130 /* SystemSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74841E46E29A4BF5A3379DD /* SystemSampler.swift */; };
+		40B589D2B9803A479EBDC6AB /* CompanionTabNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */; };
 		537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
 		5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
+		6CEE3CF352D46EF107A93A3F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5223DFFFB29165946BA0ADD7 /* Assets.xcassets */; };
 		843CF07C2155F2B4DED099CE /* PhoneRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */; };
 		95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65E5547A50E26C1DDF23DCD /* StatsApp.swift */; };
 		A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */; };
@@ -19,6 +21,7 @@
 		E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C483E76106913FF006E13F1E /* StatsCompanionApp.swift */; };
 		F2CA92A457A8725596A9E99B /* PasscodePairer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924C512394F1C887E0A896CD /* PasscodePairer.swift */; };
 		F863C4EA5AD9A45B25D704E6 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = FCE735139E0A3D816301B694 /* ActivityCore */; };
+		FF031A76FFB687BAA027FF6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C1CE0F9FCA25EC12CC82A05E /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,11 +30,14 @@
 		4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacStore.swift; sourceTree = "<group>"; };
 		4DB12CCD37017A6CF24F1D20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4DB3E66BAE7B893DF964CB03 /* ActivityCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ActivityCore; path = Packages/ActivityCore; sourceTree = SOURCE_ROOT; };
+		5223DFFFB29165946BA0ADD7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		53A86747CBA2BDA359FF531E /* CompanionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionMenu.swift; sourceTree = "<group>"; };
 		5A92A9DF6BA510323F6E0415 /* StatsCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StatsCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		738DD2A729F3D301E4ACC214 /* Stats.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Stats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionTabNavigation.swift; sourceTree = "<group>"; };
 		924C512394F1C887E0A896CD /* PasscodePairer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasscodePairer.swift; sourceTree = "<group>"; };
 		B3B8212C8C6D7225D303E161 /* CompanionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettings.swift; sourceTree = "<group>"; };
+		C1CE0F9FCA25EC12CC82A05E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C483E76106913FF006E13F1E /* StatsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCompanionApp.swift; sourceTree = "<group>"; };
 		D65E5547A50E26C1DDF23DCD /* StatsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApp.swift; sourceTree = "<group>"; };
 		E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneRegistry.swift; sourceTree = "<group>"; };
@@ -89,8 +95,10 @@
 		C1E27687865769F235D76046 /* Mac */ = {
 			isa = PBXGroup;
 			children = (
+				C1CE0F9FCA25EC12CC82A05E /* Assets.xcassets */,
 				53A86747CBA2BDA359FF531E /* CompanionMenu.swift */,
 				B3B8212C8C6D7225D303E161 /* CompanionSettings.swift */,
+				8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */,
 				4DB12CCD37017A6CF24F1D20 /* Info.plist */,
 				3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */,
 				E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */,
@@ -104,6 +112,7 @@
 		C5A14E6E97965527798539D7 /* Phone */ = {
 			isa = PBXGroup;
 			children = (
+				5223DFFFB29165946BA0ADD7 /* Assets.xcassets */,
 				1749FADF689752233144DA9B /* Info.plist */,
 				E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */,
 				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
@@ -122,6 +131,7 @@
 			buildConfigurationList = 52D52194C7D3305B07CE1CD3 /* Build configuration list for PBXNativeTarget "StatsCompanion" */;
 			buildPhases = (
 				624569FF5A0FF5800D3EBB5F /* Sources */,
+				0A6D80CA557B28DE52D5DF1C /* Resources */,
 				8189AB0DB076A7A3D55BD6A3 /* Frameworks */,
 			);
 			buildRules = (
@@ -141,6 +151,7 @@
 			buildConfigurationList = 60E31AE9D555EDBECDC581AE /* Build configuration list for PBXNativeTarget "Stats" */;
 			buildPhases = (
 				B347787CAD3C33C10596DFD5 /* Sources */,
+				8A1F44BD6B02860C4F5F1334 /* Resources */,
 				28B7B3120D3156EA59D0E6AA /* Frameworks */,
 			);
 			buildRules = (
@@ -195,6 +206,25 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		0A6D80CA557B28DE52D5DF1C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF031A76FFB687BAA027FF6B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8A1F44BD6B02860C4F5F1334 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6CEE3CF352D46EF107A93A3F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		624569FF5A0FF5800D3EBB5F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -202,6 +232,7 @@
 			files = (
 				CFA21E6E662297D19C9AD7A3 /* CompanionMenu.swift in Sources */,
 				DBAAB382997972775BDEAFF4 /* CompanionSettings.swift in Sources */,
+				40B589D2B9803A479EBDC6AB /* CompanionTabNavigation.swift in Sources */,
 				537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */,
 				843CF07C2155F2B4DED099CE /* PhoneRegistry.swift in Sources */,
 				E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */,

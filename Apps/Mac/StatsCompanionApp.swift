@@ -5,7 +5,7 @@ import ServiceManagement
 import Security
 import SwiftUI
 
-enum CompanionSettingsPage {
+enum CompanionSettingsPage: Equatable {
     case home
     case changelog
 }
@@ -61,6 +61,7 @@ final class StatsCompanionModel: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             _ = NSApp.setActivationPolicy(self.dockVisible ? .regular : .accessory)
+            Self.installDockIcon()
         }
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
@@ -87,10 +88,17 @@ final class StatsCompanionModel: ObservableObject {
 
     func refreshPasscode() {
         guard !pairingPending else { return }
-        pairingCode = nil
-        pairingExpires = nil
-        pairingLocked = false
-        startPairing()
+        // Keep the current passcode on screen until the replacement is ready.
+        // Clearing it here briefly renders the "Generating passcode" layout
+        // in both the status menu and Settings, making the interface jump.
+        pairingPending = true
+        server?.beginPairing { [weak self] code, expires in
+            guard let self else { return }
+            self.pairingCode = code
+            self.pairingExpires = expires
+            self.pairingLocked = false
+            self.pairingPending = false
+        }
     }
 
     func setMenuBarVisible(_ enabled: Bool) {
@@ -106,10 +114,29 @@ final class StatsCompanionModel: ObservableObject {
             dockVisible = enabled
             visibilityError = nil
             UserDefaults.standard.set(enabled, forKey: "StatsCompanion.showDock")
-            if enabled { NSApp.activate(ignoringOtherApps: true) }
+            if enabled {
+                // Reassign after the Dock activation policy changes, since
+                // AppKit may recreate the tile when switching to .regular.
+                Self.installDockIcon()
+                NSApp.activate(ignoringOtherApps: true)
+            }
         } else {
             visibilityError = "Could not change Dock visibility."
         }
+    }
+
+    private static func installDockIcon() {
+        // A menu-bar-only launch can leave AppKit with its generic icon when
+        // the user later enables the Dock. Load the compiled icon explicitly.
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: url) {
+            NSApp.applicationIconImage = icon
+        } else if let brandMark = NSImage(named: "StatsBrandMark") {
+            // The About artwork remains a useful fallback for development
+            // bundles that have not packaged the .icns yet.
+            NSApp.applicationIconImage = brandMark
+        }
+        NSApp.dockTile.display()
     }
 
     func revokePhone(_ id: UUID) {
@@ -194,13 +221,15 @@ final class StatsCompanionModel: ObservableObject {
             self?.pairedPhones = phones
         }, onPairingEnded: { [weak self] reason in
             guard let self else { return }
-            self.pairingCode = nil
-            self.pairingExpires = nil
             switch reason {
             case .exhausted:
+                self.pairingCode = nil
+                self.pairingExpires = nil
                 self.pairingLocked = true
             case .expired, .used:
-                self.startPairing()
+                // Automatic rotation uses the same uninterrupted UI update
+                // as tapping Refresh. Only the exhausted state hides the code.
+                self.refreshPasscode()
             }
         })
     }
@@ -231,11 +260,18 @@ final class StatsCompanionModel: ObservableObject {
 struct StatsCompanionApp: App {
     @StateObject private var model = StatsCompanionModel()
     var body: some Scene {
-        MenuBarExtra("Stats Companion", systemImage: "chart.xyaxis.line", isInserted: Binding(
+        MenuBarExtra(isInserted: Binding(
             get: { model.menuBarVisible },
             set: { model.setMenuBarVisible($0) }
         )) {
             CompanionMenu(model: model)
+        } label: {
+            Image("StatsStatusMark")
+                .resizable()
+                .interpolation(.high)
+                .renderingMode(.original)
+                .frame(width: 18, height: 18)
+                .accessibilityLabel("Stats Companion")
         }
         .menuBarExtraStyle(.window)
         Settings {

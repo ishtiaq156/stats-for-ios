@@ -61,7 +61,13 @@ struct CompanionMenu: View {
             menuDivider
             CompanionToggleRow(
                 title: "Open at login",
-                isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
+                isOn: Binding(
+                    get: { model.openAtLogin },
+                    set: {
+                        keyboardSelection = nil
+                        model.setOpenAtLogin($0)
+                    }
+                ),
                 keyboardSelected: keyboardSelection == .openAtLogin,
                 onHover: { hovering in
                     if hovering {
@@ -81,6 +87,19 @@ struct CompanionMenu: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .frame(width: 312)
+        .background(CompanionTabNavigation(
+            onTab: { backward in
+                moveSelection(backward ? -1 : 1)
+                // Restore root arrow/Escape handling after clicking a control.
+                menuFocused = true
+                return true
+            },
+            onActivate: {
+                // Activation follows the highlighted row even if a native
+                // switch/button briefly retained first-responder focus.
+                activateSelection() == .handled
+            }
+        ))
         .focusable()
         .focused($menuFocused)
         .focusEffectDisabled()
@@ -140,7 +159,10 @@ struct CompanionMenu: View {
                         iconOnly: true,
                         highlighted: highlighted(.copyPasscode),
                         onHover: { setHover(.copyPasscode, $0) }
-                    ) { perform(.copyPasscode) }
+                    ) {
+                        keyboardSelection = nil
+                        perform(.copyPasscode)
+                    }
                     .frame(width: 30)
                 } else if model.pairingLocked {
                     Text("Pairing paused")
@@ -166,7 +188,10 @@ struct CompanionMenu: View {
             iconOnly: true,
             highlighted: highlighted(.refreshPasscode),
             onHover: { setHover(.refreshPasscode, $0) }
-        ) { perform(.refreshPasscode) }
+        ) {
+            keyboardSelection = nil
+            perform(.refreshPasscode)
+        }
         .frame(width: 30)
     }
 
@@ -232,7 +257,10 @@ struct CompanionMenu: View {
             shortcutKey: action == .settings ? "," : action == .quit ? "q" : nil,
             highlighted: highlighted(action),
             onHover: { setHover(action, $0) }
-        ) { perform(action) }
+        ) {
+            keyboardSelection = nil
+            perform(action)
+        }
     }
 
     private var menuDivider: some View {
@@ -299,6 +327,8 @@ struct CompanionMenu: View {
                 copiedPasscode = false
             }
         case .refreshPasscode:
+            copyFeedbackTask?.cancel()
+            copiedPasscode = false
             model.refreshPasscode()
         case .checkUpdates:
             if case .available(_, let url) = model.updateState {
@@ -309,10 +339,7 @@ struct CompanionMenu: View {
         case .website:
             open("https://github.com/ishtiaq156/stats-for-ios")
         case .about:
-            NSApp.activate(ignoringOtherApps: true)
-            NSApp.orderFrontStandardAboutPanel(nil)
-            NSApp.windows.first(where: { $0.title.localizedCaseInsensitiveContains("About") })?
-                .orderFrontRegardless()
+            CompanionAboutWindow.show()
         case .changelog:
             showSettings(.changelog)
         case .openAtLogin:
