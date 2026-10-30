@@ -92,6 +92,7 @@ final class StatsCompanionModel: ObservableObject {
 
     func setMenuBarVisible(_ enabled: Bool) {
         guard enabled || dockVisible else { return }
+        guard menuBarVisible != enabled else { return }
         menuBarVisible = enabled
         UserDefaults.standard.set(enabled, forKey: "StatsCompanion.showMenuBar")
     }
