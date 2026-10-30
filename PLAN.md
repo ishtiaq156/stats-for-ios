@@ -71,4 +71,4 @@ Test passcode pairing and revocation on a physical iPhone, review the protocol, 
 ## Progress — 30 October 2026
 
 - The Mac companion menu now centers pairing, network and phone status, update links, login startup, Settings, and Quit. It tries port 8888 and falls back to an available port.
-- Version 0.3 source replaces shared-key QR pairing with a five-minute, five-digit SPAKE2 enrollment session, one credential per phone, and individual revocation. The old pairing path is removed. Both app targets build; physical-iPhone pairing, menu visual review, and an independent protocol review remain.
+- Version 0.3 source replaces shared-key QR pairing with a five-minute, five-digit SPAKE2 enrollment session, one credential per phone, and individual revocation. The old pairing path is removed. Both app targets build; the Mac menu layout was visually accepted on October 30, including its refresh/copy controls, status alignment, and right-aligned login switch. The Settings window, physical-iPhone pairing, and independent protocol review remain for follow-up.

@@ -1,5 +1,7 @@
 # Security
 
-Please avoid posting setup keys, pairing QR codes, or private network details in public issues. If you find a security vulnerability, contact the repository owner privately through their GitHub profile before disclosing details publicly.
+Please avoid posting pairing passcodes, phone credentials, or private network details in public issues. If you find a security vulnerability, contact the repository owner privately through their GitHub profile before disclosing details publicly.
 
-The current local protocol uses a shared 256-bit setup key and AES-GCM. Rotating the key in the Mac menu revokes all phones. Per-phone credentials and a full security review are planned before a stable release. Keep this early build on a trusted local network.
+The current local prototype uses a five-minute, five-digit pairing passcode with SPAKE2 and key confirmation. Each enrolled phone receives a distinct 256-bit credential stored in Keychain; subsequent metric requests use AES-GCM. Refreshing the passcode invalidates the previous pairing session, while revoking a phone removes only that phone's authorization.
+
+The pairing implementation and underlying SPAKE2 dependency have not received an independent security audit. Physical-device testing and protocol review remain necessary before public distribution. Keep this early build on a trusted local network.
