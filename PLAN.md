@@ -13,7 +13,7 @@ See the current health and activity of one or more Macs from an iPhone: CPU, mem
 ## First usable version
 
 1. **Vertical slice:** Mac companion reads CPU, memory, disk capacity/free space, network throughput, and battery where present; iPhone discovers the Mac, pairs, and shows a live overview. Sampling starts at 2 seconds while viewed and slows when idle. Values include a “last updated” timestamp; disconnected and sleeping Macs are shown clearly.
-2. **Pairing:** the Mac shows a QR code containing its identity fingerprint and a high-entropy one-time setup secret. Bonjour finds nearby Macs. The iPhone confirms the Mac name and a short code shown on both devices. The QR data authenticates the encrypted setup connection; long-lived device credentials go in Keychain. The Mac has a list of paired phones and a revoke action. Manual address entry with the full setup key is a fallback for networks where Bonjour is blocked.
+2. **Pairing:** the Mac starts a five-minute pairing session on demand and shows a five-digit passcode. Bonjour finds nearby Macs; manual local IP and port entry is the fallback. SPAKE2 with key confirmation enrolls one phone per code, then each phone receives its own long-lived credential. Three wrong codes or one success close the session. The Mac lists and revokes phones individually. See [Mac companion redesign](docs/COMPANION-DESIGN.md).
 3. **Detail:** CPU use and per-core activity; memory pressure and used/free; disk volume capacity and read/write rates; network upload/download and interface; battery charge, charging state, and health when available. Small charts show recent samples. Each metric has consistent units and a clear empty/unavailable state.
 4. **Polish:** multiple Macs, reorderable overview cards, light/dark mode, Dynamic Type, VoiceOver labels, reduced motion, reconnect behavior, and permission/error guidance.
 
@@ -21,14 +21,14 @@ See the current health and activity of one or more Macs from an iPhone: CPU, mem
 
 - **Native Swift/SwiftUI** for both apps; a shared Swift package for metric models, wire messages, and unit formatting.
 - **Stats as a reference for collectors**, especially CPU, disk, network, battery, and sensor edge cases. Reuse selected MIT-licensed code only where it reduces work, retaining its copyright and license notice. Keep our app and user interface distinct. Review the installed Stats app and source before choosing exact collectors.
-- **Network framework + Bonjour** for local discovery and transport. Declare local network usage and the specific Bonjour service in the iPhone app. The first implementation uses a QR-delivered 256-bit setup key and AES-GCM authenticated encryption. A later security pass should give each phone a distinct credential and assess forward secrecy; the current Mac action revokes all phones by rotating the shared key.
+- **Network framework + Bonjour** for local discovery and transport. Declare local network usage and the specific Bonjour service in the iPhone app. Version 0.3 replaces the QR-delivered shared key with SPAKE2 enrollment and a distinct credential per phone. Old pairings must be repeated.
 - **Mac owns history** so the iPhone can reconnect and retrieve the last few hours without running continuously in the background. Limit storage and allow clearing it.
 - **No cloud in the first release.** The domain is reserved for a possible later website or relay; it is not needed for local viewing. A user-managed VPN such as Tailscale can be evaluated for remote viewing before operating our own service.
 
 ## UX direction
 
 - Take inspiration from Hilium and Mirage’s nearby-device discovery, clear device identity, short pairing steps, and connection feedback. Build original visuals and copy.
-- Pairing flow: **Find Mac → verify code → connected overview**. Show what the companion is sharing before confirmation. Keep a visible retry and manual-address path.
+- Pairing flow: **Find Mac → enter temporary code → connected overview**. Show what the companion is sharing before pairing. Keep a visible retry and manual-address path.
 - Overview: Mac name, connection state, last sample time, then four prominent cards (CPU, memory, storage, network). Tapping a card opens its chart and detail. Battery appears when applicable. Avoid presenting a stale value as live.
 - Use restrained motion and native controls; make charts legible at a glance rather than copying a desktop monitoring dashboard onto a phone.
 
@@ -59,7 +59,7 @@ See the current health and activity of one or more Macs from an iPhone: CPU, mem
 
 ## Next release focus
 
-Compare displayed values with macOS's own readings, polish reconnection and pairing, then add per-phone credentials and revocation. Evaluate remote access only after local behavior is reliable.
+Test passcode pairing and revocation on a physical iPhone, review the protocol, compare displayed values with macOS's own readings, and polish reconnection. Evaluate remote access only after local behavior is reliable.
 
 ## Progress — 29 October 2026
 
@@ -67,3 +67,8 @@ Compare displayed values with macOS's own readings, polish reconnection and pair
 - Both targets build for Mac/iOS simulator, and the iPhone target builds for iOS device with signing disabled. The simulator overview has been visually checked.
 - A manual address fallback is implemented. Bonjour publication was verified, and the user confirmed live readings on a physical iPhone through LiveContainer. Shared packet tests cover decryption, wrong keys, tampering, and frame bounds. Per-phone revocation and remote access remain open.
 - Version 0.2 adds 30 minutes of in-memory history on the Mac, detail charts on iPhone, and reopening the last paired Mac. The new history request still needs a physical-iPhone check.
+
+## Progress — 30 October 2026
+
+- The Mac companion menu now centers pairing, network and phone status, update links, login startup, Settings, and Quit. It tries port 8888 and falls back to an available port.
+- Version 0.3 source replaces shared-key QR pairing with a five-minute, five-digit SPAKE2 enrollment session, one credential per phone, and individual revocation. The old pairing path is removed. Both app targets build; physical-iPhone pairing, menu visual review, and an independent protocol review remain.

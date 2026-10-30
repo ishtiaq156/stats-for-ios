@@ -1,0 +1,11 @@
+[package]
+name = "stats_spake2"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+spake2 = "0.4.0"

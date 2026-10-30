@@ -1,0 +1,4 @@
+module Spake2FFI {
+    header "spake2_bridge.h"
+    export *
+}

@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "ActivityCore", targets: ["ActivityCore"])],
     targets: [
-        .target(name: "ActivityCore"),
+        .binaryTarget(name: "Spake2FFI", path: "Vendor/Spake2FFI.xcframework"),
+        .target(name: "ActivityCore", dependencies: ["Spake2FFI"]),
         .testTarget(name: "ActivityCoreTests", dependencies: ["ActivityCore"])
     ]
 )

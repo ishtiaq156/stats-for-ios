@@ -4,33 +4,97 @@ import Network
 import Security
 
 final class MetricServer: NSObject, NetServiceDelegate {
-    let setupKey: Data
     private let snapshot: () -> MetricSnapshot
     private let history: () -> [MetricSnapshot]
     private let onPort: (UInt16) -> Void
+    private let onDiscovery: (Bool, String?) -> Void
+    private let onPhones: ([PairedPhone]) -> Void
+    private let onPairingEnded: () -> Void
     private let queue = DispatchQueue(label: "StatsForIOS.MetricServer")
     private var listener: NWListener?
     private var advertiser: NetService?
+    private var attemptedFallback = false
+    private let phones: PhoneRegistry
+    private struct PairingSession {
+        let id: UUID
+        let code: String
+        let expires: Date
+        var attempts = 0
+        var handshake: UUID?
+    }
+    private var pairingSession: PairingSession?
 
     init(snapshot: @escaping () -> MetricSnapshot,
          history: @escaping () -> [MetricSnapshot],
-         onPort: @escaping (UInt16) -> Void) {
+         onPort: @escaping (UInt16) -> Void,
+         onDiscovery: @escaping (Bool, String?) -> Void,
+         onPhones: @escaping ([PairedPhone]) -> Void,
+         onPairingEnded: @escaping () -> Void,
+         phones: PhoneRegistry = PhoneRegistry()) {
         self.snapshot = snapshot
         self.history = history
         self.onPort = onPort
-        self.setupKey = Self.loadOrCreateKey()
+        self.onDiscovery = onDiscovery
+        self.onPhones = onPhones
+        self.onPairingEnded = onPairingEnded
+        self.phones = phones
         super.init()
     }
 
     func start() {
+        startListener(preferredPort: NWEndpoint.Port(rawValue: 8888)!)
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.publishPhones()
+        }
+    }
+
+    func beginPairing(completion: @escaping (String, Date) -> Void) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            var random: UInt32 = 0
+            guard SecRandomCopyBytes(kSecRandomDefault, MemoryLayout<UInt32>.size, &random) == errSecSuccess else { return }
+            let code = String(format: "%05d", random % 100_000)
+            let session = PairingSession(id: UUID(), code: code, expires: Date().addingTimeInterval(300))
+            self.pairingSession = session
+            DispatchQueue.main.async { completion(code, session.expires) }
+            self.queue.asyncAfter(deadline: .now() + 300) { [weak self] in
+                guard let self, self.pairingSession?.id == session.id else { return }
+                self.endPairing()
+            }
+        }
+    }
+
+    func revokePhone(_ id: UUID) {
+        queue.async { [weak self] in
+            self?.phones.revoke(id)
+            self?.publishPhones()
+        }
+    }
+
+    private func startListener(preferredPort: NWEndpoint.Port?) {
         do {
-            let listener = try NWListener(using: .tcp)
+            let listener: NWListener
+            if let preferredPort {
+                listener = try NWListener(using: .tcp, on: preferredPort)
+            } else {
+                listener = try NWListener(using: .tcp)
+            }
             listener.stateUpdateHandler = { [weak self, weak listener] state in
                 NSLog("Stats Companion listener: %@", String(describing: state))
                 if case .ready = state, let port = listener?.port {
                     DispatchQueue.main.async {
                         self?.onPort(port.rawValue)
                         self?.advertise(port: port)
+                    }
+                } else if case .failed(let error) = state {
+                    guard let self else { return }
+                    if !self.attemptedFallback, preferredPort != nil {
+                        self.attemptedFallback = true
+                        listener?.cancel()
+                        self.startListener(preferredPort: nil)
+                    } else {
+                        DispatchQueue.main.async { self.onDiscovery(false, error.localizedDescription) }
                     }
                 }
             }
@@ -40,13 +104,20 @@ final class MetricServer: NSObject, NetServiceDelegate {
             listener.start(queue: queue)
             self.listener = listener
         } catch {
-            NSLog("Stats Companion listener failed: %@", String(describing: error))
+            if !attemptedFallback, preferredPort != nil {
+                attemptedFallback = true
+                startListener(preferredPort: nil)
+            } else {
+                DispatchQueue.main.async { [onDiscovery] in onDiscovery(false, error.localizedDescription) }
+            }
         }
     }
 
     func stop() {
         listener?.cancel()
         advertiser?.stop()
+        advertiser = nil
+        queue.async { [weak self] in self?.pairingSession = nil }
     }
 
     private func advertise(port: NWEndpoint.Port) {
@@ -59,14 +130,12 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     func netServiceDidPublish(_ sender: NetService) {
         NSLog("Stats Companion Bonjour published")
+        onDiscovery(true, nil)
     }
 
     func netService(_ sender: NetService, didNotPublish errorDict: [String: NSNumber]) {
         NSLog("Stats Companion Bonjour failed: %@", String(describing: errorDict))
-    }
-
-    static func revokeAllPhones() {
-        SecItemDelete(keyQuery() as CFDictionary)
+        onDiscovery(false, "Local discovery is unavailable. Manual address pairing may still work.")
     }
 
     private func accept(_ connection: NWConnection) {
@@ -86,13 +155,32 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     private func receiveBody(on connection: NWConnection, length: Int) {
         connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] data, _, _, error in
-            guard let self, error == nil, let data,
-                  let request = try? SecurePacket.open(data, using: self.setupKey),
+            guard let self, error == nil, let data else {
+                connection.cancel()
+                return
+            }
+            if data.starts(with: PairingWire.helloPrefix) {
+                self.handlePairingHello(data.dropFirst(PairingWire.helloPrefix.count), on: connection)
+                return
+            }
+            let prefixLength = PairingWire.requestPrefix.count
+            guard data.starts(with: PairingWire.requestPrefix),
+                  data.count > prefixLength + 36,
+                  let idString = String(data: data[prefixLength..<(prefixLength + 36)], encoding: .utf8),
+                  let phoneID = UUID(uuidString: idString),
+                  let key = self.phones.key(for: phoneID) else {
+                connection.cancel()
+                return
+            }
+            let encrypted = Data(data.dropFirst(prefixLength + 36))
+            guard let request = try? SecurePacket.open(encrypted, using: key),
                   let command = String(data: request, encoding: .utf8),
                   command == "snapshot.v1" || command == "history.v1" else {
                 connection.cancel()
                 return
             }
+            self.phones.recordActivity(for: phoneID)
+            self.publishPhones()
             DispatchQueue.main.async {
                 let payload: Data?
                 if command == "history.v1" {
@@ -101,7 +189,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
                     payload = try? JSONEncoder().encode(self.snapshot())
                 }
                 guard let payload,
-                      let encrypted = try? SecurePacket.seal(payload, using: self.setupKey) else {
+                      let encrypted = try? SecurePacket.seal(payload, using: key) else {
                     connection.cancel()
                     return
                 }
@@ -112,30 +200,97 @@ final class MetricServer: NSObject, NetServiceDelegate {
         }
     }
 
-    private static func loadOrCreateKey() -> Data {
-        var query = keyQuery()
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        var item: CFTypeRef?
-        if SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
-           let key = item as? Data, key.count == 32 { return key }
-
-        var key = Data(count: 32)
-        let status = key.withUnsafeMutableBytes { bytes in
-            SecRandomCopyBytes(kSecRandomDefault, 32, bytes.baseAddress!)
+    private func handlePairingHello(_ body: Data, on connection: NWConnection) {
+        guard var session = pairingSession, session.expires > Date(),
+              session.attempts < 3, session.handshake == nil else {
+            connection.cancel()
+            return
         }
-        precondition(status == errSecSuccess, "Cannot create secure setup key")
-        var add = keyQuery()
-        add[kSecValueData as String] = key
-        precondition(SecItemAdd(add as CFDictionary, nil) == errSecSuccess, "Cannot save setup key")
-        return key
+        session.attempts += 1
+        let handshake = UUID()
+        session.handshake = handshake
+        pairingSession = session
+        guard let hello = try? JSONDecoder().decode(PairingWire.Hello.self, from: body),
+              hello.message.count == 33,
+              let exchange = try? PairingExchange(role: .mac, code: session.code),
+              let sessionKey = try? exchange.finish(peerMessage: hello.message) else {
+            failPairingAttempt(handshake)
+            connection.cancel()
+            return
+        }
+        let response = PairingWire.helloPrefix + exchange.message
+        connection.send(content: SecurePacket.frame(response), completion: .contentProcessed { [weak self] error in
+            guard let self, error == nil else {
+                self?.failPairingAttempt(handshake)
+                connection.cancel()
+                return
+            }
+            self.receiveFrame(on: connection) { [weak self] body in
+                guard let self, self.pairingSession?.handshake == handshake,
+                      (self.pairingSession?.expires ?? .distantPast) > Date(),
+                      let body,
+                      let opened = try? SecurePacket.open(body, using: sessionKey),
+                      let claim = try? JSONDecoder().decode(PairingWire.Claim.self, from: opened),
+                      !claim.phoneName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                      claim.phoneName.count <= 60 else {
+                    self?.failPairingAttempt(handshake)
+                    connection.cancel()
+                    return
+                }
+                var credential = Data(count: 32)
+                let status = credential.withUnsafeMutableBytes {
+                    SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!)
+                }
+                guard status == errSecSuccess,
+                      let id = self.phones.enroll(name: claim.phoneName, key: credential),
+                      let enrollment = try? JSONEncoder().encode(PairingWire.Enrollment(phoneID: id, credential: credential)),
+                      let sealed = try? SecurePacket.seal(enrollment, using: sessionKey) else {
+                    self.failPairingAttempt(handshake)
+                    connection.cancel()
+                    return
+                }
+                self.endPairing()
+                self.publishPhones()
+                connection.send(content: SecurePacket.frame(sealed), completion: .contentProcessed { _ in connection.cancel() })
+            }
+        })
+        queue.asyncAfter(deadline: .now() + 10) { [weak self, weak connection] in
+            guard let self, self.pairingSession?.handshake == handshake else { return }
+            self.failPairingAttempt(handshake)
+            connection?.cancel()
+        }
     }
 
-    private static func keyQuery() -> [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.ishtiaqsyed.StatsForIOS.setup",
-            kSecAttrAccount as String: "local"
-        ]
+    private func receiveFrame(on connection: NWConnection, completion: @escaping (Data?) -> Void) {
+        connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { header, _, _, error in
+            guard error == nil, let header, let length = SecurePacket.length(header) else {
+                completion(nil)
+                return
+            }
+            connection.receive(minimumIncompleteLength: length, maximumLength: length) { body, _, _, error in
+                completion(error == nil ? body : nil)
+            }
+        }
     }
+
+    private func failPairingAttempt(_ id: UUID) {
+        guard var session = pairingSession, session.handshake == id else { return }
+        if session.attempts >= 3 || session.expires <= Date() {
+            endPairing()
+        } else {
+            session.handshake = nil
+            pairingSession = session
+        }
+    }
+
+    private func endPairing() {
+        pairingSession = nil
+        DispatchQueue.main.async { [onPairingEnded] in onPairingEnded() }
+    }
+
+    private func publishPhones() {
+        let list = phones.all()
+        DispatchQueue.main.async { [onPhones] in onPhones(list) }
+    }
+
 }

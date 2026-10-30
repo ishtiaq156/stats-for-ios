@@ -20,6 +20,8 @@ final class NearbyMacStore: ObservableObject {
     private let browser: NWBrowser
     private var selectedEndpoint: NWEndpoint?
     private var selectedKey: Data?
+    private var selectedPhoneID: UUID?
+    private var pairer: PasscodePairer?
     private var timer: Timer?
     private var inFlight = false
     private var historyInFlight = false
@@ -59,10 +61,18 @@ final class NearbyMacStore: ObservableObject {
 
     private func restoreLastMac() {
         let defaults = UserDefaults.standard
-        guard let name = defaults.string(forKey: Self.lastMacKey),
-              let key = PairingStore.load(for: name) else { return }
+        guard let name = defaults.string(forKey: Self.lastMacKey) else { return }
+        guard let stored = PairingStore.load(for: name),
+              let credential = PairingStore.decode(stored) else {
+            PairingStore.delete(for: name)
+            defaults.removeObject(forKey: Self.lastMacKey)
+            defaults.removeObject(forKey: Self.manualHostKey)
+            defaults.removeObject(forKey: Self.manualPortKey)
+            return
+        }
         selectedName = name
-        selectedKey = key
+        selectedKey = credential.key
+        selectedPhoneID = credential.phoneID
         status = "Looking for \(name)"
         if let host = defaults.string(forKey: Self.manualHostKey),
            let portNumber = defaults.object(forKey: Self.manualPortKey) as? Int,
@@ -81,46 +91,83 @@ final class NearbyMacStore: ObservableObject {
         browser.start(queue: .main)
     }
 
-    func pair(_ device: Device, keyString: String) -> Bool {
-        guard let key = Data(base64Encoded: keyString.trimmingCharacters(in: .whitespacesAndNewlines)),
-              key.count == 32 else { return false }
-        selectedName = device.name
-        selectionGeneration = UUID()
-        inFlight = false
-        historyInFlight = false
-        selectedEndpoint = device.endpoint
-        selectedKey = key
-        snapshot = nil
-        history = []
-        historyLoaded = false
-        status = "Connecting"
-        PairingStore.save(key, for: device.name)
-        remember(device)
-        refresh()
-        return true
+    func pairWithPasscode(_ device: Device, code: String, phoneName: String,
+                          completion: @escaping (Result<Void, Error>) -> Void) {
+        guard code.utf8.count == 5, code.utf8.allSatisfy({ $0 >= 48 && $0 <= 57 }) else {
+            completion(.failure(PasscodePairer.PairingError.invalidCode))
+            return
+        }
+        let trimmedName = phoneName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty, trimmedName.count <= 60 else {
+            completion(.failure(PasscodePairer.PairingError.invalidName))
+            return
+        }
+        do {
+            let pairer = try PasscodePairer(endpoint: device.endpoint, code: code,
+                                           phoneName: trimmedName) {
+                [weak self] result in
+                guard let self else { return }
+                self.pairer = nil
+                switch result {
+                case .success(let enrollment):
+                    let stored = PairingStore.encode(key: enrollment.credential, phoneID: enrollment.phoneID)
+                    guard PairingStore.save(stored, for: device.name) else {
+                        completion(.failure(PasscodePairer.PairingError.credentialSaveFailed))
+                        return
+                    }
+                    self.selectedName = device.name
+                    self.selectionGeneration = UUID()
+                    self.inFlight = false
+                    self.historyInFlight = false
+                    self.selectedEndpoint = device.endpoint
+                    self.selectedKey = enrollment.credential
+                    self.selectedPhoneID = enrollment.phoneID
+                    self.snapshot = nil
+                    self.history = []
+                    self.historyLoaded = false
+                    self.status = "Connecting"
+                    self.remember(device)
+                    self.refresh()
+                    completion(.success(()))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+            self.pairer = pairer
+            pairer.start()
+        } catch {
+            completion(.failure(error))
+        }
     }
 
-    func pairManual(host: String, portString: String, keyString: String) -> Bool {
+    func pairManualWithPasscode(host: String, portString: String, code: String, phoneName: String,
+                                completion: @escaping (Result<Void, Error>) -> Void) {
         let host = host.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !host.isEmpty, let number = UInt16(portString),
-              let port = NWEndpoint.Port(rawValue: number) else { return false }
-        let endpoint = NWEndpoint.hostPort(host: NWEndpoint.Host(host), port: port)
-        let paired = pair(Device(endpoint: endpoint, name: "\(host):\(number)"), keyString: keyString)
-        if paired {
-            UserDefaults.standard.set(host, forKey: Self.manualHostKey)
-            UserDefaults.standard.set(Int(number), forKey: Self.manualPortKey)
+              let port = NWEndpoint.Port(rawValue: number) else {
+            completion(.failure(PasscodePairer.PairingError.connectionFailed))
+            return
         }
-        return paired
+        let device = Device(endpoint: .hostPort(host: .init(host), port: port), name: "\(host):\(number)")
+        pairWithPasscode(device, code: code, phoneName: phoneName) { result in
+            if case .success = result {
+                UserDefaults.standard.set(host, forKey: Self.manualHostKey)
+                UserDefaults.standard.set(Int(number), forKey: Self.manualPortKey)
+            }
+            completion(result)
+        }
     }
 
     func select(_ device: Device) -> Bool {
-        guard let key = PairingStore.load(for: device.name) else { return false }
+        guard let stored = PairingStore.load(for: device.name),
+              let credential = PairingStore.decode(stored) else { return false }
         selectedName = device.name
         selectionGeneration = UUID()
         inFlight = false
         historyInFlight = false
         selectedEndpoint = device.endpoint
-        selectedKey = key
+        selectedKey = credential.key
+        selectedPhoneID = credential.phoneID
         snapshot = nil
         history = []
         historyLoaded = false
@@ -128,6 +175,11 @@ final class NearbyMacStore: ObservableObject {
         remember(device)
         refresh()
         return true
+    }
+
+    func hasSavedPairing(_ device: Device) -> Bool {
+        guard let stored = PairingStore.load(for: device.name) else { return false }
+        return PairingStore.decode(stored) != nil
     }
 
     func forget() {
@@ -138,6 +190,7 @@ final class NearbyMacStore: ObservableObject {
         historyInFlight = false
         selectedEndpoint = nil
         selectedKey = nil
+        selectedPhoneID = nil
         snapshot = nil
         history = []
         historyLoaded = false
@@ -161,21 +214,23 @@ final class NearbyMacStore: ObservableObject {
     }
 
     private func refresh() {
-        guard !inFlight, let endpoint = selectedEndpoint, let key = selectedKey else { return }
+        guard !inFlight, let endpoint = selectedEndpoint, let key = selectedKey,
+              let phoneID = selectedPhoneID else { return }
         inFlight = true
         let generation = selectionGeneration
         let connection = NWConnection(to: endpoint, using: .tcp)
         connection.stateUpdateHandler = { [weak self] state in
-            Task { @MainActor in self?.handle(state, on: connection, key: key, generation: generation) }
+            Task { @MainActor in self?.handle(state, on: connection, key: key, phoneID: phoneID, generation: generation) }
         }
         connection.start(queue: .main)
     }
 
-    private func handle(_ state: NWConnection.State, on connection: NWConnection, key: Data, generation: UUID) {
+    private func handle(_ state: NWConnection.State, on connection: NWConnection, key: Data,
+                        phoneID: UUID, generation: UUID) {
             guard selectionGeneration == generation else { connection.cancel(); return }
             switch state {
             case .ready:
-                guard let request = try? SecurePacket.seal(Data("snapshot.v1".utf8), using: key) else {
+                guard let request = try? makeRequest("snapshot.v1", key: key, phoneID: phoneID) else {
                     connection.cancel(); inFlight = false; return
                 }
                 connection.send(content: SecurePacket.frame(request), completion: .contentProcessed { error in
@@ -192,6 +247,10 @@ final class NearbyMacStore: ObservableObject {
                 fail()
             default: break
             }
+    }
+
+    private func makeRequest(_ command: String, key: Data, phoneID: UUID) throws -> Data {
+        try PairingWire.authenticatedRequest(command, phoneID: phoneID, key: key)
     }
 
     private func receiveHeader(on connection: NWConnection, key: Data, generation: UUID) {
@@ -232,7 +291,7 @@ final class NearbyMacStore: ObservableObject {
         if let snapshot {
             status = "Disconnected · last update \(snapshot.timestamp.formatted(date: .omitted, time: .standard))"
         } else {
-            status = "Cannot connect · check setup key"
+            status = "Cannot connect · check the Mac and pair again if needed"
         }
     }
 
@@ -243,7 +302,8 @@ final class NearbyMacStore: ObservableObject {
     }
 
     private func fetchHistory() {
-        guard !historyInFlight, let endpoint = selectedEndpoint, let key = selectedKey else { return }
+        guard !historyInFlight, let endpoint = selectedEndpoint, let key = selectedKey,
+              let phoneID = selectedPhoneID else { return }
         historyInFlight = true
         let generation = selectionGeneration
         let connection = NWConnection(to: endpoint, using: .tcp)
@@ -253,7 +313,7 @@ final class NearbyMacStore: ObservableObject {
                 guard self.selectionGeneration == generation else { connection.cancel(); return }
                 switch state {
                 case .ready:
-                    guard let request = try? SecurePacket.seal(Data("history.v1".utf8), using: key) else {
+                    guard let request = try? self.makeRequest("history.v1", key: key, phoneID: phoneID) else {
                         connection.cancel(); self.historyInFlight = false; return
                     }
                     connection.send(content: SecurePacket.frame(request), completion: .contentProcessed { error in
@@ -312,18 +372,32 @@ final class NearbyMacStore: ObservableObject {
 }
 
 private enum PairingStore {
+    static func encode(key: Data, phoneID: UUID) -> Data {
+        PairingWire.requestPrefix + Data(phoneID.uuidString.utf8) + key
+    }
+
+    static func decode(_ stored: Data) -> (key: Data, phoneID: UUID)? {
+        let prefix = PairingWire.requestPrefix
+        guard stored.count == prefix.count + 36 + 32, stored.starts(with: prefix),
+              let idString = String(data: stored[prefix.count..<(prefix.count + 36)], encoding: .utf8),
+              let id = UUID(uuidString: idString) else { return nil }
+        return (Data(stored.suffix(32)), id)
+    }
     private static func query(_ name: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: "com.ishtiaqsyed.StatsForIOS.pairing",
          kSecAttrAccount as String: name]
     }
 
-    static func save(_ key: Data, for name: String) {
+    @discardableResult
+    static func save(_ key: Data, for name: String) -> Bool {
         let base = query(name)
-        SecItemDelete(base as CFDictionary)
+        let status = SecItemUpdate(base as CFDictionary, [kSecValueData as String: key] as CFDictionary)
+        if status == errSecSuccess { return true }
+        guard status == errSecItemNotFound else { return false }
         var values = base
         values[kSecValueData as String] = key
-        SecItemAdd(values as CFDictionary, nil)
+        return SecItemAdd(values as CFDictionary, nil) == errSecSuccess
     }
 
     static func load(for name: String) -> Data? {

@@ -119,14 +119,14 @@ private struct PairingView: View {
     @ObservedObject var store: NearbyMacStore
     @Environment(\.dismiss) private var dismiss
     @State private var pairingDevice: NearbyMacStore.Device?
-    @State private var key = ""
-    @State private var invalidKey = false
-    @State private var showPairingChoices = false
-    @State private var showKeyPrompt = false
-    @State private var showScanner = false
+    @State private var showPasscodePrompt = false
+    @State private var passcode = ""
+    @State private var phoneName = "iPhone"
+    @State private var manualPasscode = ""
+    @State private var pairingError: String?
+    @State private var isPairing = false
     @State private var manualHost = ""
     @State private var manualPort = ""
-    @State private var manualKey = ""
 
     var body: some View {
         NavigationStack {
@@ -137,24 +137,31 @@ private struct PairingView: View {
                                                description: Text("Open Stats Companion on your Mac and keep both devices on the same network."))
                     } else {
                         ForEach(store.devices) { device in
-                            Button {
-                                if store.select(device) { dismiss() }
-                                else {
-                                    pairingDevice = device
-                                    key = ""
-                                    showPairingChoices = true
-                                }
-                            } label: {
-                                HStack {
+                            HStack {
+                                Button {
+                                    if store.select(device) { dismiss() }
+                                    else {
+                                        pairingDevice = device
+                                        passcode = ""
+                                        showPasscodePrompt = true
+                                    }
+                                } label: {
                                     Label(device.name, systemImage: "desktopcomputer")
-                                    Spacer()
-                                    Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                if store.hasSavedPairing(device) {
+                                    Button("Pair again") {
+                                        pairingDevice = device
+                                        passcode = ""
+                                        showPasscodePrompt = true
+                                    }
+                                    .font(.caption)
                                 }
                             }
                         }
                     }
                 } header: { Text("Nearby Macs") }
-                footer: { Text("The Mac menu shows a setup key. Pair once, then the key is saved securely on this iPhone.") }
+                footer: { Text("Open Pair new phone in the Mac menu and enter its five-digit passcode.") }
 
                 Section {
                     TextField("Mac IP address", text: $manualHost)
@@ -162,16 +169,23 @@ private struct PairingView: View {
                         .autocorrectionDisabled()
                     TextField("Port", text: $manualPort)
                         .keyboardType(.numberPad)
-                    SecureField("Setup key", text: $manualKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    Button("Connect") {
-                        if store.pairManual(host: manualHost, portString: manualPort, keyString: manualKey) {
-                            dismiss()
-                        } else { invalidKey = true }
+                    TextField("Five-digit passcode", text: $manualPasscode)
+                        .keyboardType(.numberPad)
+                    TextField("This phone's name", text: $phoneName)
+                    Button(isPairing ? "Pairing…" : "Pair") {
+                        isPairing = true
+                        store.pairManualWithPasscode(host: manualHost, portString: manualPort,
+                                                     code: manualPasscode, phoneName: phoneName) { result in
+                            isPairing = false
+                            switch result {
+                            case .success: dismiss()
+                            case .failure(let error): pairingError = error.localizedDescription
+                            }
+                        }
                     }
+                    .disabled(isPairing)
                 } header: { Text("Manual address") }
-                footer: { Text("Use the local address and setup key shown in Stats Companion when nearby discovery is unavailable.") }
+                footer: { Text("Use the local address and actual port shown in Stats Companion when nearby discovery is unavailable.") }
 
                 if store.selectedName != nil {
                     Section {
@@ -182,37 +196,29 @@ private struct PairingView: View {
             .navigationTitle("Add Mac")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
-            .confirmationDialog("Pair with \(pairingDevice?.name ?? "Mac")", isPresented: $showPairingChoices) {
-                Button("Scan QR code") { showScanner = true }
-                Button("Paste setup key") { showKeyPrompt = true }
-            } message: { Text("Open Stats Companion in your Mac menu bar.") }
-            .alert("Enter setup key", isPresented: $showKeyPrompt) {
-                TextField("Paste the key from your Mac", text: $key)
+            .alert("Enter Mac passcode", isPresented: $showPasscodePrompt) {
+                TextField("Five-digit passcode", text: $passcode)
+                    .keyboardType(.numberPad)
+                TextField("This phone's name", text: $phoneName)
                 Button("Pair") {
-                    if let pairingDevice, store.pair(pairingDevice, keyString: key) { dismiss() }
-                    else { invalidKey = true }
+                    guard let pairingDevice else { return }
+                    isPairing = true
+                    store.pairWithPasscode(pairingDevice, code: passcode, phoneName: phoneName) { result in
+                        isPairing = false
+                        switch result {
+                        case .success: dismiss()
+                        case .failure(let error): pairingError = error.localizedDescription
+                        }
+                    }
                 }
                 Button("Cancel", role: .cancel) {}
-            } message: { Text("Copy the setup key from Stats Companion on your Mac.") }
-            .alert("Invalid setup key", isPresented: $invalidKey) {
-                Button("OK") {}
-            } message: { Text("Check the address, port, and full setup key shown on your Mac.") }
-            .sheet(isPresented: $showScanner) {
-                NavigationStack {
-                    QRCodeScanner { code in
-                        showScanner = false
-                        if let pairingDevice, store.pair(pairingDevice, keyString: code) { dismiss() }
-                        else { invalidKey = true }
-                    } onUnavailable: {
-                        showScanner = false
-                        showKeyPrompt = true
-                    }
-                    .ignoresSafeArea()
-                    .navigationTitle("Scan Mac code")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Cancel") { showScanner = false } } }
-                }
-            }
+            } message: { Text("The code appears in Pair new phone on the Mac.") }
+            .alert("Pairing failed", isPresented: Binding(
+                get: { pairingError != nil },
+                set: { if !$0 { pairingError = nil } }
+            )) {
+                Button("OK") { pairingError = nil }
+            } message: { Text(pairingError ?? "") }
         }
         .onAppear { store.startDiscovery() }
     }

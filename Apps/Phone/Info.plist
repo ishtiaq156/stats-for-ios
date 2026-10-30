@@ -8,7 +8,5 @@
     </array>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Find and connect to your Mac to display its activity.</string>
-    <key>NSCameraUsageDescription</key>
-    <string>Scan the pairing code shown by Stats Companion on your Mac.</string>
 </dict>
 </plist>

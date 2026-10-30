@@ -12,3 +12,4 @@ xcuserdata/
 *.cer
 .env
 .env.*
+Native/Spake2Bridge/target/
