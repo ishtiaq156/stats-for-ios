@@ -54,6 +54,8 @@ struct MetricDetailView: View {
     let preview: MetricSnapshot
 
     private var latest: MetricSnapshot { store.snapshot ?? preview }
+    private var isPreview: Bool { store.selectedName == nil }
+    private var isAwaitingReading: Bool { !isPreview && store.snapshot == nil }
 
     private var points: [ChartPoint] {
         store.history.flatMap { sample -> [ChartPoint] in
@@ -83,7 +85,8 @@ struct MetricDetailView: View {
     private var axisMaximum: Double {
         switch kind {
         case .cpu, .storage: 100
-        case .memory: max(1, Double(latest.memoryTotalBytes ?? 0) / 1_000_000_000)
+        case .memory: max(1, Double(latest.memoryTotalBytes ?? 0) / 1_000_000_000,
+                          (points.map(\.value).max() ?? 0) * 1.1)
         case .network: max(0.1, (points.map(\.value).max() ?? 0) * 1.2)
         }
     }
@@ -91,13 +94,25 @@ struct MetricDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(kind.title, systemImage: kind.icon)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(kind.tint)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 10) {
+                        Image(systemName: kind.icon)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(kind.tint)
+                            .frame(width: 36, height: 36)
+                            .background(kind.tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(kind.title)
+                                .font(.subheadline.weight(.semibold))
+                            Text(isPreview ? "Sample values" : store.selectedName ?? "Mac")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Text(primaryValue)
-                        .font(.system(size: 42, weight: .semibold, design: .rounded))
-                        .minimumScaleFactor(0.7)
+                        .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.65)
                         .lineLimit(1)
                     Text(secondaryValue)
                         .font(.subheadline)
@@ -105,11 +120,13 @@ struct MetricDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(20)
-                .background(.background, in: RoundedRectangle(cornerRadius: 20))
+                .statsCardBackground()
 
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text("Recent activity").font(.headline)
+                        Text("Recent activity")
+                            .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
                         Spacer()
                         Text(kind.chartUnit).font(.caption).foregroundStyle(.secondary)
                     }
@@ -120,7 +137,7 @@ struct MetricDetailView: View {
                                 y: .value(kind.chartUnit, point.value),
                                 series: .value("Metric", point.series)
                             )
-                            .interpolationMethod(.catmullRom)
+                            .interpolationMethod(.monotone)
                             .foregroundStyle(point.series == "Upload" ? Color.teal : kind.tint)
                         }
                         .chartYScale(domain: 0...axisMaximum)
@@ -130,20 +147,28 @@ struct MetricDetailView: View {
                                 AxisValueLabel(format: .dateTime.hour().minute())
                             }
                         }
-                        .chartLegend(kind == .network ? .visible : .hidden)
+                        .chartLegend(.hidden)
                         .frame(height: 220)
-                        .accessibilityLabel("\(kind.title) activity over the last 30 minutes")
+                        .accessibilityLabel("\(kind.title) readings from the last 30 minutes")
+                        if kind == .network {
+                            HStack(spacing: 18) {
+                                chartKey("Download", color: kind.tint)
+                                chartKey("Upload", color: .teal)
+                            }
+                        }
                     } else {
                         ContentUnavailableView(
-                            store.selectedName == nil ? "Pair a Mac to see history" : "Collecting history",
+                            isPreview ? "Pair a Mac to see history" : "Waiting for readings",
                             systemImage: "chart.xyaxis.line",
-                            description: Text("Recent readings will appear here as the Mac collects them.")
+                            description: Text(isPreview
+                                              ? "History appears after you connect to a Mac."
+                                              : "The graph appears after two readings arrive from your Mac.")
                         )
                         .frame(maxWidth: .infinity)
                     }
                 }
                 .padding(20)
-                .background(.background, in: RoundedRectangle(cornerRadius: 20))
+                .statsCardBackground()
 
                 VStack(spacing: 12) {
                     switch kind {
@@ -154,18 +179,25 @@ struct MetricDetailView: View {
                         row("Physical memory", MetricFormat.bytes(latest.memoryTotalBytes))
                     case .storage:
                         row("Free", MetricFormat.bytes(latest.diskFreeBytes))
-                        row("Startup volume", MetricFormat.bytes(latest.diskTotalBytes))
+                        row("Startup volume capacity", MetricFormat.bytes(latest.diskTotalBytes))
                     case .network:
                         row("Download", MetricFormat.rate(latest.networkReceivedBytesPerSecond))
                         row("Upload", MetricFormat.rate(latest.networkSentBytesPerSecond))
                     }
                     Divider()
-                    row("Last reading", latest.timestamp.formatted(date: .omitted, time: .standard))
+                    if isPreview {
+                        row("Data source", "Sample values")
+                    } else if let reading = store.snapshot?.timestamp {
+                        row("Last reading", reading.formatted(date: .abbreviated, time: .shortened))
+                    } else {
+                        row("Last reading", "Waiting for Mac")
+                    }
                 }
                 .padding(20)
-                .background(.background, in: RoundedRectangle(cornerRadius: 20))
+                .statsCardBackground()
             }
-            .padding(18)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 20)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle(kind.title)
@@ -182,9 +214,10 @@ struct MetricDetailView: View {
     }
 
     private var secondaryValue: String {
-        switch kind {
+        if isAwaitingReading { return "Waiting for your Mac to send readings" }
+        return switch kind {
         case .cpu: "Total processor usage"
-        case .memory: "Active, wired, and compressed memory"
+        case .memory: "Memory currently in use"
         case .storage: "Free on the startup volume"
         case .network: "Download rate · upload \(MetricFormat.rate(latest.networkSentBytesPerSecond))"
         }
@@ -192,5 +225,17 @@ struct MetricDetailView: View {
 
     private func row(_ title: String, _ value: String) -> some View {
         LabeledContent(title, value: value)
+    }
+
+    private func chartKey(_ title: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 }

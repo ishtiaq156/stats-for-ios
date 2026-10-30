@@ -13,52 +13,78 @@ private enum MenuAction: Int, CaseIterable {
     case quit
 }
 
+/// One presentation model for both the status menu and the Settings window.
+/// A missing phone is informational; only a failed listener is an error.
+enum CompanionConnectionPresentation {
+    struct Status {
+        let text: String
+        let symbol: String
+        let color: Color
+    }
+
+    @MainActor
+    static func network(_ model: StatsCompanionModel) -> Status {
+        if model.isDiscoverable {
+            let text = model.port.map { "Discoverable on the network using port \($0)" }
+                ?? "Discoverable on the network"
+            return Status(text: text, symbol: "checkmark.circle.fill", color: .green)
+        }
+        if let error = model.networkError, !error.isEmpty {
+            return Status(text: error, symbol: "xmark.circle.fill", color: .red)
+        }
+        return Status(text: "Starting connection service…", symbol: "ellipsis.circle.fill", color: .secondary)
+    }
+
+    static let noDevices = Status(text: "No devices connected", symbol: "exclamationmark.circle.fill", color: .yellow)
+}
+
 struct CompanionMenu: View {
     @ObservedObject var model: StatsCompanionModel
     @Environment(\.openSettings) private var openSettings
     @FocusState private var menuFocused: Bool
     @State private var keyboardSelection: MenuAction?
     @State private var hoveredAction: MenuAction?
+    @State private var copiedPasscode = false
+    @State private var copyFeedbackTask: Task<Void, Never>?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             passcodeSection
+            menuDivider
             statusSection
-            menuGroup {
-                updateRow
-                Divider().padding(.leading, 12)
-                row("Website", action: .website)
-                Divider().padding(.leading, 12)
-                row("About", action: .about)
+            menuDivider
+            updateRow
+            row("Website", action: .website)
+            row("About", action: .about)
+            menuDivider
+            row("Changelog", action: .changelog)
+            menuDivider
+            CompanionToggleRow(
+                title: "Open at login",
+                isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
+                highlighted: highlighted(.openAtLogin),
+                onHover: { setHover(.openAtLogin, $0) }
+            )
+            if let error = model.loginError {
+                Text(error).font(.caption).foregroundStyle(.red)
+                    .padding(.horizontal, 10).padding(.bottom, 6)
             }
-            menuGroup {
-                row("Changelog", action: .changelog, symbol: "chevron.right")
-            }
-            menuGroup {
-                CompanionToggleRow(
-                    title: "Open at login",
-                    isOn: Binding(get: { model.openAtLogin }, set: { model.setOpenAtLogin($0) }),
-                    highlighted: highlighted(.openAtLogin),
-                    onHover: { setHover(.openAtLogin, $0) }
-                )
-                if let error = model.loginError {
-                    Text(error).font(.caption).foregroundStyle(.red)
-                        .padding(.horizontal, 12).padding(.bottom, 6)
-                }
-                Divider().padding(.leading, 12)
-                row("Settings", action: .settings, shortcut: "⌘,")
-            }
-            menuGroup {
-                row("Quit Stats Companion", action: .quit, shortcut: "⌘Q")
-            }
+            row("Settings", action: .settings, shortcut: "⌘,")
+            menuDivider
+            row("Quit Stats Companion", action: .quit, shortcut: "⌘Q")
         }
-        .padding(14)
-        .frame(width: 440)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .frame(width: 312)
         .focusable()
         .focused($menuFocused)
         .focusEffectDisabled()
         .onAppear {
             DispatchQueue.main.async { menuFocused = true }
+        }
+        .onDisappear {
+            copyFeedbackTask?.cancel()
+            copyFeedbackTask = nil
         }
         .onMoveCommand { direction in
             switch direction {
@@ -80,17 +106,17 @@ struct CompanionMenu: View {
     }
 
     private var passcodeSection: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Passcode")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 Spacer()
                 if let expiry = model.pairingExpires {
                     TimelineView(.periodic(from: .now, by: 1)) { context in
                         let remaining = max(0, Int(expiry.timeIntervalSince(context.date)))
                         Text("Expires in \(remaining / 60):\(String(format: "%02d", remaining % 60))")
-                            .font(.caption.monospacedDigit())
+                            .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -98,18 +124,18 @@ struct CompanionMenu: View {
             HStack {
                 if let code = model.pairingCode {
                     Text(code)
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: 30, weight: .semibold))
                         .monospacedDigit()
                         .textSelection(.enabled)
                     Spacer()
                     CompanionRow(
-                        title: "Copy passcode",
-                        symbol: "doc.on.doc",
+                        title: copiedPasscode ? "Copied" : "Copy passcode",
+                        symbol: copiedPasscode ? "checkmark" : "text.document.fill",
                         iconOnly: true,
                         highlighted: highlighted(.copyPasscode),
                         onHover: { setHover(.copyPasscode, $0) }
                     ) { perform(.copyPasscode) }
-                    .frame(width: 44)
+                    .frame(width: 30)
                 } else if model.pairingLocked {
                     Text("Pairing paused")
                         .font(.headline)
@@ -121,7 +147,7 @@ struct CompanionMenu: View {
                         highlighted: highlighted(.refreshPasscode),
                         onHover: { setHover(.refreshPasscode, $0) }
                     ) { perform(.refreshPasscode) }
-                    .frame(width: 44)
+                    .frame(width: 30)
                 } else {
                     Text("Generating passcode…").foregroundStyle(.secondary)
                     Spacer()
@@ -129,54 +155,43 @@ struct CompanionMenu: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 7)
+        .padding(.top, 6)
+        .padding(.bottom, 7)
     }
 
     private var statusSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            statusRow(
-                model.isDiscoverable ? "checkmark.circle.fill" : "exclamationmark.circle.fill",
-                color: model.isDiscoverable ? .green : .yellow,
-                text: networkStatus,
-                secondary: false
-            )
+        let network = CompanionConnectionPresentation.network(model)
+        return VStack(alignment: .leading, spacing: 8) {
+            statusRow(network.symbol, color: network.color, text: network.text)
             let active = model.pairedPhones.filter(\.isConnected)
             if active.isEmpty {
-                statusRow("exclamationmark.circle.fill", color: .yellow,
-                          text: "No devices connected", secondary: true)
+                statusRow(CompanionConnectionPresentation.noDevices.symbol,
+                          color: CompanionConnectionPresentation.noDevices.color,
+                          text: CompanionConnectionPresentation.noDevices.text, muted: true)
             } else {
                 ForEach(active) { phone in
-                    statusRow("checkmark.circle.fill", color: .green,
-                              text: phone.name, secondary: false)
+                    statusRow("iphone.circle.fill", color: .green, text: phone.name)
                 }
             }
         }
-        .padding(12)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(groupBackground, in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private func statusRow(_ symbol: String, color: Color, text: String, secondary: Bool) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+    private func statusRow(_ symbol: String, color: Color, text: String, muted: Bool = false) -> some View {
+        HStack(alignment: .top, spacing: 8) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(color)
-                .frame(width: 20)
+                .frame(width: 18)
             Text(text)
                 .font(.system(size: 13))
-                .foregroundStyle(secondary ? .secondary : .primary)
+                .foregroundStyle(muted ? Color.secondary : Color.primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-
-    private var networkStatus: String {
-        if model.isDiscoverable, let port = model.port {
-            return "Discoverable on the network using port \(port)"
-        }
-        return model.networkError ?? "Starting local discovery…"
     }
 
     private var updateRow: some View {
@@ -210,15 +225,10 @@ struct CompanionMenu: View {
         ) { perform(action) }
     }
 
-    private var groupBackground: Color {
-        Color(nsColor: .controlBackgroundColor).opacity(0.68)
-    }
-
-    private func menuGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 0, content: content)
-            .padding(4)
-            .frame(maxWidth: .infinity)
-            .background(groupBackground, in: RoundedRectangle(cornerRadius: 12))
+    private var menuDivider: some View {
+        Divider()
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
     }
 
     private var navigableActions: [MenuAction] {
@@ -268,6 +278,13 @@ struct CompanionMenu: View {
             guard let code = model.pairingCode else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(code, forType: .string)
+            copiedPasscode = true
+            copyFeedbackTask?.cancel()
+            copyFeedbackTask = Task { @MainActor in
+                do { try await Task.sleep(for: .seconds(1.5)) }
+                catch { return }
+                copiedPasscode = false
+            }
         case .refreshPasscode:
             model.refreshPasscode()
         case .checkUpdates:
@@ -336,6 +353,7 @@ private struct CompanionRow: View {
                 if !iconOnly {
                     Text(title)
                         .font(.system(size: 13))
+                        .foregroundStyle(highlighted && enabled ? Color(nsColor: .selectedMenuItemTextColor) : Color.primary)
                         .lineLimit(1)
                     Spacer(minLength: 8)
                 }
@@ -343,22 +361,22 @@ private struct CompanionRow: View {
                     ProgressView().controlSize(.small)
                 } else if let trailing {
                     Text(trailing)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(highlighted && enabled ? Color(nsColor: .selectedMenuItemTextColor) : Color.secondary)
                 } else if let symbol {
                     Image(systemName: symbol)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(highlighted && enabled ? Color(nsColor: .selectedMenuItemTextColor) : Color.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: iconOnly ? 32 : 34,
+            .frame(maxWidth: .infinity, minHeight: 26,
                    alignment: iconOnly ? .center : .leading)
-            .padding(.horizontal, iconOnly ? 0 : 10)
+            .padding(.horizontal, iconOnly ? 0 : 7)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(highlighted && enabled ? Color.primary.opacity(0.11) : .clear)
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(highlighted && enabled ? Color(nsColor: .selectedContentBackgroundColor) : .clear)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .contentShape(RoundedRectangle(cornerRadius: 5))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -375,14 +393,17 @@ private struct CompanionToggleRow: View {
 
     var body: some View {
         Toggle(isOn: $isOn) {
-            Text(title).font(.system(size: 13))
+            Text(title)
+                .font(.system(size: 13))
+                .foregroundStyle(highlighted ? Color(nsColor: .selectedMenuItemTextColor) : Color.primary)
         }
         .toggleStyle(.switch)
-        .padding(.horizontal, 10)
-        .frame(height: 34)
+        .controlSize(.small)
+        .padding(.horizontal, 7)
+        .frame(height: 28)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(highlighted ? Color.primary.opacity(0.11) : .clear)
+            RoundedRectangle(cornerRadius: 5)
+                .fill(highlighted ? Color(nsColor: .selectedContentBackgroundColor) : .clear)
         )
         .onHover(perform: onHover)
     }

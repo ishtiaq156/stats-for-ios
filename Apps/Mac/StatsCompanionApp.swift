@@ -238,5 +238,14 @@ struct StatsCompanionApp: App {
         Settings {
             CompanionSettings(model: model)
         }
+        #if DEBUG
+        WindowGroup("Settings Preview") {
+            if ProcessInfo.processInfo.environment["STATS_UI_PREVIEW"] == "1" {
+                CompanionSettings(model: model)
+            } else {
+                EmptyView()
+            }
+        }
+        #endif
     }
 }
