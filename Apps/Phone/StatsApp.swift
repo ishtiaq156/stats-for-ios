@@ -34,19 +34,36 @@ private struct OverviewView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(spacing: 12) {
-                        MetricCard(title: "CPU", icon: "cpu", tint: .orange,
-                                   value: MetricFormat.percent(displayed.cpuFraction),
-                                   detail: "Processor load", fraction: displayed.cpuFraction)
-                        MetricCard(title: "Memory", icon: "memorychip", tint: .purple,
-                                   value: MetricFormat.bytes(displayed.memoryUsedBytes),
-                                   detail: "of \(MetricFormat.bytes(displayed.memoryTotalBytes)) used",
-                                   fraction: fraction(displayed.memoryUsedBytes, displayed.memoryTotalBytes))
-                        MetricCard(title: "Storage", icon: "internaldrive", tint: .blue,
-                                   value: MetricFormat.bytes(displayed.diskFreeBytes),
-                                   detail: "free of \(MetricFormat.bytes(displayed.diskTotalBytes))",
-                                   fraction: diskUsedFraction(displayed))
-                        NetworkCard(snapshot: displayed)
+                        NavigationLink {
+                            MetricDetailView(kind: .cpu, store: nearby, preview: displayed)
+                        } label: {
+                            MetricCard(title: "CPU", icon: "cpu", tint: .orange,
+                                       value: MetricFormat.percent(displayed.cpuFraction),
+                                       detail: "Processor load", fraction: displayed.cpuFraction)
+                        }
+                        NavigationLink {
+                            MetricDetailView(kind: .memory, store: nearby, preview: displayed)
+                        } label: {
+                            MetricCard(title: "Memory", icon: "memorychip", tint: .purple,
+                                       value: MetricFormat.bytes(displayed.memoryUsedBytes),
+                                       detail: "of \(MetricFormat.bytes(displayed.memoryTotalBytes)) used",
+                                       fraction: fraction(displayed.memoryUsedBytes, displayed.memoryTotalBytes))
+                        }
+                        NavigationLink {
+                            MetricDetailView(kind: .storage, store: nearby, preview: displayed)
+                        } label: {
+                            MetricCard(title: "Storage", icon: "internaldrive", tint: .blue,
+                                       value: MetricFormat.bytes(displayed.diskFreeBytes),
+                                       detail: "free of \(MetricFormat.bytes(displayed.diskTotalBytes))",
+                                       fraction: diskUsedFraction(displayed))
+                        }
+                        NavigationLink {
+                            MetricDetailView(kind: .network, store: nearby, preview: displayed)
+                        } label: {
+                            NetworkCard(snapshot: displayed)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
                 .padding(18)
             }
@@ -216,6 +233,9 @@ private struct MetricCard: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(tint)
                 Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(value).font(.system(size: 32, weight: .semibold, design: .rounded))
@@ -246,8 +266,13 @@ private struct NetworkCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("Network", systemImage: "network")
-                .font(.subheadline.weight(.semibold)).foregroundStyle(.green)
+            HStack {
+                Label("Network", systemImage: "network")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.green)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
             HStack(spacing: 20) {
                 rate("Down", icon: "arrow.down", value: snapshot.networkReceivedBytesPerSecond)
                 rate("Up", icon: "arrow.up", value: snapshot.networkSentBytesPerSecond)

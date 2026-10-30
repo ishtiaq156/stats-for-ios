@@ -57,12 +57,13 @@ See the current health and activity of one or more Macs from an iPhone: CPU, mem
 - Decide the oldest supported iOS/macOS versions and confirm the target iPhone model before setting deployment targets. Initial assumption: iOS 17+ and macOS 14+.
 - Inspect Mirage’s pairing screens from the user’s local IPA only if public screenshots and hands-on use do not give enough detail; use observations for UX, not its code or assets.
 
-## Immediate next work session
+## Next release focus
 
-Create the two Xcode targets and shared package, implement a small Mac sampler and versioned snapshot, then display live CPU/memory/disk/network values in an iPhone simulator with a mock connection. Follow with LAN discovery and secure pairing on real devices.
+Compare displayed values with macOS's own readings, polish reconnection and pairing, then add per-phone credentials and revocation. Evaluate remote access only after local behavior is reliable.
 
 ## Progress — 29 October 2026
 
 - Xcode project, shared package, Mac sampler, iPhone overview, Bonjour discovery, encrypted local snapshot transport, QR setup code, and Keychain storage are implemented.
 - Both targets build for Mac/iOS simulator, and the iPhone target builds for iOS device with signing disabled. The simulator overview has been visually checked.
-- A manual address fallback is implemented. The Mac listener reaches its ready state, but Bonjour publication has not been observed in this development environment; actual Mac local-network permission and physical-iPhone pairing need verification. Shared packet tests cover decryption, wrong keys, tampering, and frame bounds. Per-phone revocation, history, details, and remote access remain open.
+- A manual address fallback is implemented. Bonjour publication was verified, and the user confirmed live readings on a physical iPhone through LiveContainer. Shared packet tests cover decryption, wrong keys, tampering, and frame bounds. Per-phone revocation and remote access remain open.
+- Version 0.2 adds 30 minutes of in-memory history on the Mac, detail charts on iPhone, and reopening the last paired Mac. The new history request still needs a physical-iPhone check.

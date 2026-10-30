@@ -1,6 +1,6 @@
 # Stats for iOS
 
-Native macOS menu bar companion and iPhone dashboard for local system activity. This is an early prototype: the Mac samples CPU, memory, startup disk capacity, network throughput, and battery where available. The iPhone can discover the Mac on the same network or connect by local address, then read encrypted snapshots after pairing. End-to-end pairing on a physical iPhone still needs verification.
+Native macOS menu bar companion and iPhone dashboard for local system activity. This is an early prototype: the Mac samples CPU, memory, startup disk capacity, network throughput, and battery where available. The iPhone can discover the Mac on the same network or connect by local address, then read encrypted snapshots after pairing. Pairing has been confirmed on a physical iPhone through LiveContainer.
 
 Inspired by the metric coverage of [Stats](https://github.com/exelban/stats) and the pairing experience of Hilium and Mirage. The app and its UI are original; no Stats source is currently copied into this repository.
 
@@ -27,7 +27,7 @@ swift test --package-path Packages/ActivityCore
 1. Run **StatsCompanion** from Xcode. **Stats Companion** appears in the menu bar. Leave it running.
 2. Run **Stats** on an iPhone on the same Wi-Fi. In Xcode, select your free **Personal Team** for the phone target and let Xcode manage signing. Tapping **Add Mac** asks for Local Network access; allow it.
 3. Tap **Add Mac**, choose the nearby Mac, then scan the QR code shown in the Mac menu or paste its setup key. If discovery is blocked, enter the local IP address, port, and setup key shown in the Mac menu. Camera access is requested only when scanning.
-4. The overview changes from labeled sample values to the Mac's readings. A failed connection displays a connection message instead of sample numbers.
+4. The overview changes from labeled sample values to the Mac's readings. Tap a metric for its recent chart and details. A failed connection displays a connection message instead of sample numbers.
 
 The setup key is a 256-bit secret stored in each device's Keychain. Snapshot requests and responses use AES-GCM authenticated encryption over the local TCP connection. Anyone with the setup key can read metrics, so treat the QR code and copied key as private. **Revoke all paired phones** on the Mac rotates the key. This first version uses a shared key for all paired phones; per-phone revocation and a polished verification step are still planned.
 
@@ -37,7 +37,7 @@ The setup key is a 256-bit secret stored in each device's Keychain. Snapshot req
 - The Mac companion must run in a logged-in session. Sleeping Macs stop sampling.
 - Values refresh every two seconds while the phone app runs. iOS background execution and widgets are separate work.
 - CPU and network rates need two samples, so they show a dash briefly after launch.
-- The Mac stores no history yet. Detail charts, alerts, sensors, and remote access are future work.
+- The Mac keeps about 30 minutes of readings in memory. Restarting Stats Companion clears that history. Alerts, sensors, and remote access are future work.
 - Free Personal Team provisioning expires after seven days; rebuild and reinstall from Xcode when needed. TestFlight and App Store distribution require paid enrollment.
 
 See [PLAN.md](PLAN.md) for the roadmap.

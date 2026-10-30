@@ -12,6 +12,7 @@
 		537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
 		5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
 		95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65E5547A50E26C1DDF23DCD /* StatsApp.swift */; };
+		A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */; };
 		AE37237A302B37A6D4C313B4 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = ABA880534490FDC0A2FFDD1F /* ActivityCore */; };
 		E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C483E76106913FF006E13F1E /* StatsCompanionApp.swift */; };
 		F863C4EA5AD9A45B25D704E6 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = FCE735139E0A3D816301B694 /* ActivityCore */; };
@@ -29,6 +30,7 @@
 		C483E76106913FF006E13F1E /* StatsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCompanionApp.swift; sourceTree = "<group>"; };
 		D65E5547A50E26C1DDF23DCD /* StatsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApp.swift; sourceTree = "<group>"; };
 		E74841E46E29A4BF5A3379DD /* SystemSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSampler.swift; sourceTree = "<group>"; };
+		E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				1749FADF689752233144DA9B /* Info.plist */,
+				E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */,
 				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
 				30E4CCEB1B94FD72E0EFDECD /* QRCodeScanner.swift */,
 				D65E5547A50E26C1DDF23DCD /* StatsApp.swift */,
@@ -198,6 +201,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */,
 				5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */,
 				1B4DA540517239F214320A33 /* QRCodeScanner.swift in Sources */,
 				95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */,
@@ -213,6 +217,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/Mac/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
@@ -221,6 +226,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.10;
@@ -233,6 +239,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/Phone/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Stats;
@@ -242,6 +249,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.10;
@@ -255,6 +263,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/Phone/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Stats;
@@ -264,6 +273,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.10;
@@ -277,6 +287,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Apps/Mac/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Stats Companion";
@@ -285,6 +296,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.10;

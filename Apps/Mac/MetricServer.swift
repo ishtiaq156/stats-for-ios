@@ -6,13 +6,17 @@ import Security
 final class MetricServer: NSObject, NetServiceDelegate {
     let setupKey: Data
     private let snapshot: () -> MetricSnapshot
+    private let history: () -> [MetricSnapshot]
     private let onPort: (UInt16) -> Void
     private let queue = DispatchQueue(label: "StatsForIOS.MetricServer")
     private var listener: NWListener?
     private var advertiser: NetService?
 
-    init(snapshot: @escaping () -> MetricSnapshot, onPort: @escaping (UInt16) -> Void) {
+    init(snapshot: @escaping () -> MetricSnapshot,
+         history: @escaping () -> [MetricSnapshot],
+         onPort: @escaping (UInt16) -> Void) {
         self.snapshot = snapshot
+        self.history = history
         self.onPort = onPort
         self.setupKey = Self.loadOrCreateKey()
         super.init()
@@ -84,12 +88,19 @@ final class MetricServer: NSObject, NetServiceDelegate {
         connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] data, _, _, error in
             guard let self, error == nil, let data,
                   let request = try? SecurePacket.open(data, using: self.setupKey),
-                  request == Data("snapshot.v1".utf8) else {
+                  let command = String(data: request, encoding: .utf8),
+                  command == "snapshot.v1" || command == "history.v1" else {
                 connection.cancel()
                 return
             }
             DispatchQueue.main.async {
-                guard let payload = try? JSONEncoder().encode(self.snapshot()),
+                let payload: Data?
+                if command == "history.v1" {
+                    payload = try? JSONEncoder().encode(self.history())
+                } else {
+                    payload = try? JSONEncoder().encode(self.snapshot())
+                }
+                guard let payload,
                       let encrypted = try? SecurePacket.seal(payload, using: self.setupKey) else {
                     connection.cancel()
                     return

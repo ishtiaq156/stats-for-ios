@@ -6,6 +6,7 @@ import SwiftUI
 @MainActor
 final class StatsCompanionModel: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot
+    private var recentSnapshots: [MetricSnapshot]
     @Published private(set) var localAddress: String?
     private let sampler = SystemSampler()
     private var timer: Timer?
@@ -14,7 +15,9 @@ final class StatsCompanionModel: ObservableObject {
     var setupKey: String { server?.setupKey.base64EncodedString() ?? "" }
 
     init() {
-        snapshot = sampler.sample()
+        let first = sampler.sample()
+        snapshot = first
+        recentSnapshots = [first]
         server = makeServer()
         server?.start()
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
@@ -22,7 +25,13 @@ final class StatsCompanionModel: ObservableObject {
         }
     }
 
-    func refresh() { snapshot = sampler.sample() }
+    func refresh() {
+        snapshot = sampler.sample()
+        recentSnapshots.append(snapshot)
+        if recentSnapshots.count > 900 {
+            recentSnapshots.removeFirst(recentSnapshots.count - 900)
+        }
+    }
 
     func revokeAllPhones() {
         server?.stop()
@@ -35,6 +44,8 @@ final class StatsCompanionModel: ObservableObject {
     private func makeServer() -> MetricServer {
         MetricServer(snapshot: { [weak self] in
             self?.snapshot ?? MetricSnapshot(machineName: "Mac")
+        }, history: { [weak self] in
+            self?.recentSnapshots ?? []
         }, onPort: { [weak self] port in
             self?.localAddress = Self.ipv4Address().map { "\($0):\(port)" }
         })
