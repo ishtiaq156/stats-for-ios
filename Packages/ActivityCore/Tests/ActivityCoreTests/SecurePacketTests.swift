@@ -23,4 +23,11 @@ final class SecurePacketTests: XCTestCase {
         XCTAssertNil(SecurePacket.length(Data([0, 0, 0, 0])))
         XCTAssertNil(SecurePacket.length(Data([0, 16, 0, 1])))
     }
+
+    func testFrameHandlesLargeHistoryResponse() {
+        let payload = Data(repeating: 7, count: 66_242)
+        let framed = SecurePacket.frame(payload)
+        XCTAssertEqual(SecurePacket.length(framed.prefix(4)), payload.count)
+        XCTAssertEqual(framed.dropFirst(4), payload)
+    }
 }

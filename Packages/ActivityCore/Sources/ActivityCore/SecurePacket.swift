@@ -16,7 +16,12 @@ public enum SecurePacket {
 
     public static func frame(_ data: Data) -> Data {
         let count = UInt32(data.count)
-        return Data([UInt8(count >> 24), UInt8(count >> 16), UInt8(count >> 8), UInt8(count & 0xff)]) + data
+        return Data([
+            UInt8(truncatingIfNeeded: count >> 24),
+            UInt8(truncatingIfNeeded: count >> 16),
+            UInt8(truncatingIfNeeded: count >> 8),
+            UInt8(truncatingIfNeeded: count)
+        ]) + data
     }
 
     public static func length(_ header: Data) -> Int? {
