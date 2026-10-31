@@ -61,7 +61,7 @@ struct PasscodeEntryView: View {
 
                     Group {
                         if isPairing {
-                            ProgressView("Pairing with \(device.name)…")
+                            ProgressView("Pairing with \(store.displayName(for: device))…")
                                 .tint(.white)
                         } else if let errorMessage {
                             Text(errorMessage)

@@ -8,13 +8,21 @@ final class NearbyMacStore: ObservableObject {
     struct Device: Identifiable {
         let endpoint: NWEndpoint
         let name: String
+        let displayName: String
         var id: String { name }
+
+        init(endpoint: NWEndpoint, name: String, displayName: String? = nil) {
+            self.endpoint = endpoint
+            self.name = name
+            self.displayName = displayName ?? name
+        }
     }
 
     @Published private(set) var devices: [Device] = []
     @Published private(set) var snapshot: MetricSnapshot?
     @Published private(set) var history: [MetricSnapshot] = []
     @Published private(set) var selectedName: String?
+    @Published private(set) var selectedDisplayName: String?
     @Published private(set) var sessionActive = false
     @Published private(set) var selectedReachable = false
     @Published private(set) var status = "Looking for Macs"
@@ -38,6 +46,7 @@ final class NearbyMacStore: ObservableObject {
     private var snapshotRequestID = UUID()
     private var sessionRequested = false
     private static let lastMacKey = "StatsForIOS.lastMac"
+    private static let lastMacDisplayNameKey = "StatsForIOS.lastMacDisplayName"
     private static let manualHostKey = "StatsForIOS.manualHost"
     private static let manualPortKey = "StatsForIOS.manualPort"
 
@@ -58,14 +67,16 @@ final class NearbyMacStore: ObservableObject {
               let credential = PairingStore.decode(stored) else {
             PairingStore.delete(for: name)
             defaults.removeObject(forKey: Self.lastMacKey)
+            defaults.removeObject(forKey: Self.lastMacDisplayNameKey)
             defaults.removeObject(forKey: Self.manualHostKey)
             defaults.removeObject(forKey: Self.manualPortKey)
             return
         }
         selectedName = name
+        selectedDisplayName = defaults.string(forKey: Self.lastMacDisplayNameKey) ?? name
         selectedKey = credential.key
         selectedPhoneID = credential.phoneID
-        status = "Looking for \(name)"
+        status = "Looking for \(selectedDisplayName ?? name)"
         if let host = defaults.string(forKey: Self.manualHostKey),
            let portNumber = defaults.object(forKey: Self.manualPortKey) as? Int,
            (1...65_535).contains(portNumber),
@@ -114,11 +125,21 @@ final class NearbyMacStore: ObservableObject {
                 guard let self, self.browserGeneration == generation else { return }
                 self.devices = results.compactMap { result in
                     guard case let .service(name, _, _, _) = result.endpoint else { return nil }
-                    return Device(endpoint: result.endpoint, name: name)
-                }.sorted { $0.name < $1.name }
+                    let advertisedName: String?
+                    if case let .bonjour(record) = result.metadata {
+                        advertisedName = record["name"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    } else {
+                        advertisedName = nil
+                    }
+                    return Device(endpoint: result.endpoint, name: name,
+                                  displayName: advertisedName?.isEmpty == false ? advertisedName : nil)
+                }.sorted { $0.displayName < $1.displayName }
                 if let name = self.selectedName,
                    let device = self.devices.first(where: { $0.name == name }) {
                     self.selectedEndpoint = device.endpoint
+                    if device.displayName != device.name {
+                        self.updateSelectedDisplayName(device.displayName)
+                    }
                     self.refresh()
                 }
             }
@@ -139,7 +160,7 @@ final class NearbyMacStore: ObservableObject {
                     if self.selectedName == nil {
                         self.status = "Discovery failed: \(error.localizedDescription)"
                     } else if let selectedName = self.selectedName, self.selectedEndpoint == nil {
-                        self.status = "Cannot connect · checking for \(selectedName)"
+                        self.status = "Cannot connect · checking for \(self.selectedDisplayName ?? selectedName)"
                     }
                 default: break
                 }
@@ -173,6 +194,7 @@ final class NearbyMacStore: ObservableObject {
                         return
                     }
                     self.selectedName = device.name
+                    self.selectedDisplayName = device.displayName
                     self.sessionRequested = true
                     self.sessionActive = false
                     self.selectedReachable = false
@@ -221,7 +243,9 @@ final class NearbyMacStore: ObservableObject {
     func select(_ device: Device) -> Bool {
         guard let stored = PairingStore.load(for: device.name),
               let credential = PairingStore.decode(stored) else { return false }
+        let displayName = displayName(for: device)
         selectedName = device.name
+        selectedDisplayName = displayName
         sessionRequested = true
         sessionActive = false
         selectedReachable = false
@@ -252,9 +276,15 @@ final class NearbyMacStore: ObservableObject {
         return PairingStore.decode(stored) != nil
     }
 
+    func displayName(for device: Device) -> String {
+        if device.name == selectedName { return selectedDisplayName ?? device.displayName }
+        return device.displayName
+    }
+
     func forget() {
         if let selectedName { PairingStore.delete(for: selectedName) }
         selectedName = nil
+        selectedDisplayName = nil
         sessionRequested = false
         sessionActive = false
         selectedReachable = false
@@ -270,6 +300,7 @@ final class NearbyMacStore: ObservableObject {
         status = "Looking for Macs"
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: Self.lastMacKey)
+        defaults.removeObject(forKey: Self.lastMacDisplayNameKey)
         defaults.removeObject(forKey: Self.manualHostKey)
         defaults.removeObject(forKey: Self.manualPortKey)
     }
@@ -277,6 +308,7 @@ final class NearbyMacStore: ObservableObject {
     private func remember(_ device: Device) {
         let defaults = UserDefaults.standard
         defaults.set(device.name, forKey: Self.lastMacKey)
+        defaults.set(selectedDisplayName ?? device.displayName, forKey: Self.lastMacDisplayNameKey)
         if case let .hostPort(host, port) = device.endpoint {
             defaults.set(String(describing: host), forKey: Self.manualHostKey)
             defaults.set(Int(port.rawValue), forKey: Self.manualPortKey)
@@ -284,6 +316,12 @@ final class NearbyMacStore: ObservableObject {
             defaults.removeObject(forKey: Self.manualHostKey)
             defaults.removeObject(forKey: Self.manualPortKey)
         }
+    }
+
+    private func updateSelectedDisplayName(_ name: String) {
+        guard !name.isEmpty, selectedDisplayName != name else { return }
+        selectedDisplayName = name
+        UserDefaults.standard.set(name, forKey: Self.lastMacDisplayNameKey)
     }
 
     private func refresh() {
@@ -369,6 +407,7 @@ final class NearbyMacStore: ObservableObject {
                     self?.fail(); return
                 }
                 self?.snapshot = snapshot
+                self?.updateSelectedDisplayName(snapshot.machineName.trimmingCharacters(in: .whitespacesAndNewlines))
                 self?.selectedReachable = true
                 if self?.sessionRequested == true { self?.sessionActive = true }
                 self?.append(snapshot)

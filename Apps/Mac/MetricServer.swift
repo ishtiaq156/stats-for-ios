@@ -133,6 +133,8 @@ final class MetricServer: NSObject, NetServiceDelegate {
     private func advertise(port: NWEndpoint.Port) {
         advertiser?.stop()
         let service = NetService(domain: "local.", type: SecurePacket.serviceType + ".", name: "Stats Companion", port: Int32(port.rawValue))
+        let computerName = Host.current().localizedName ?? ProcessInfo.processInfo.hostName
+        service.setTXTRecord(NetService.data(fromTXTRecord: ["name": Data(computerName.utf8)]))
         service.delegate = self
         service.publish()
         advertiser = service

@@ -19,7 +19,7 @@ struct NearbyMacsView: View {
 
     private var offlineName: String? {
         guard let name = store.selectedName, !store.selectedReachable else { return nil }
-        return name
+        return store.selectedDisplayName ?? name
     }
 
     private var hasAvailableMac: Bool {
@@ -57,7 +57,7 @@ struct NearbyMacsView: View {
                             if !availableDevices.isEmpty {
                                 VStack(spacing: 12) {
                                     ForEach(availableDevices) { device in
-                                        macRow(name: device.name, available: true) { choose(device) }
+                                        macRow(name: store.displayName(for: device), available: true) { choose(device) }
                                     }
                                 }
                             }
@@ -73,11 +73,13 @@ struct NearbyMacsView: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             ForEach(availableDevices) { device in
-                                macRow(name: device.name, available: true) { choose(device) }
+                                macRow(name: store.displayName(for: device), available: true) { choose(device) }
                             }
                             if let name = store.selectedName, store.selectedReachable,
                                !availableDevices.contains(where: { $0.name == name }) {
-                                macRow(name: name, available: true) { store.connectToSelectedMac() }
+                                macRow(name: store.selectedDisplayName ?? name, available: true) {
+                                    store.connectToSelectedMac()
+                                }
                             }
                             if !hasAvailableMac {
                                 ContentUnavailableView("Searching for Macs", systemImage: "network",

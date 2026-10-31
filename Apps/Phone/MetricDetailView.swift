@@ -52,7 +52,9 @@ struct MetricDetailView: View {
     let kind: MetricKind
     @ObservedObject var store: NearbyMacStore
 
-    private var latest: MetricSnapshot { store.snapshot ?? MetricSnapshot(machineName: store.selectedName ?? "Mac") }
+    private var latest: MetricSnapshot {
+        store.snapshot ?? MetricSnapshot(machineName: store.selectedDisplayName ?? "Mac")
+    }
     private var isAwaitingReading: Bool { store.snapshot == nil }
 
     private var points: [ChartPoint] {
@@ -102,7 +104,7 @@ struct MetricDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(kind.title)
                                 .font(.subheadline.weight(.semibold))
-                            Text(store.selectedName ?? "Mac")
+                            Text(store.selectedDisplayName ?? "Mac")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

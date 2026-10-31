@@ -49,7 +49,9 @@ private struct OverviewView: View {
         return .connecting
     }
 
-    private var displayed: MetricSnapshot { nearby.snapshot ?? MetricSnapshot(machineName: nearby.selectedName ?? "Mac") }
+    private var displayed: MetricSnapshot {
+        nearby.snapshot ?? MetricSnapshot(machineName: nearby.selectedDisplayName ?? "Mac")
+    }
 
     var body: some View {
         NavigationStack {
@@ -137,7 +139,7 @@ private struct OverviewView: View {
                 .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 4) {
-            Text(nearby.selectedName ?? "Mac")
+            Text(nearby.selectedDisplayName ?? "Mac")
                     .font(.headline)
                 Text(connectionTitle)
                     .font(.subheadline)
@@ -214,7 +216,7 @@ struct PairingView: View {
                                         pairingDevice = device
                                     }
                                 } label: {
-                                    Label(device.name, systemImage: "desktopcomputer")
+                                    Label(store.displayName(for: device), systemImage: "desktopcomputer")
                                 }
                                 .disabled(isPairing)
                                 Spacer()
