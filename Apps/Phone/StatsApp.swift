@@ -168,8 +168,6 @@ struct PairingView: View {
     @ObservedObject var store: NearbyMacStore
     @Environment(\.dismiss) private var dismiss
     @State private var pairingDevice: NearbyMacStore.Device?
-    @State private var showPasscodePrompt = false
-    @State private var passcode = ""
     @State private var phoneName = "iPhone"
     @State private var manualPasscode = ""
     @State private var pairingError: String?
@@ -202,8 +200,6 @@ struct PairingView: View {
                                     if store.select(device) { dismiss() }
                                     else {
                                         pairingDevice = device
-                                        passcode = ""
-                                        showPasscodePrompt = true
                                     }
                                 } label: {
                                     Label(device.name, systemImage: "desktopcomputer")
@@ -213,8 +209,6 @@ struct PairingView: View {
                                 if store.hasSavedPairing(device) {
                                     Button("Pair again") {
                                         pairingDevice = device
-                                        passcode = ""
-                                        showPasscodePrompt = true
                                     }
                                     .font(.caption)
                                     .disabled(isPairing)
@@ -271,24 +265,9 @@ struct PairingView: View {
             .navigationTitle("Mac connections")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
-            .alert("Enter Mac passcode", isPresented: $showPasscodePrompt) {
-                TextField("Five-digit passcode", text: $passcode)
-                    .keyboardType(.numberPad)
-                    .textContentType(.oneTimeCode)
-                TextField("This phone's name", text: $phoneName)
-                Button("Pair") {
-                    guard let pairingDevice else { return }
-                    isPairing = true
-                    store.pairWithPasscode(pairingDevice, code: passcode, phoneName: phoneName) { result in
-                        isPairing = false
-                        switch result {
-                        case .success: dismiss()
-                        case .failure(let error): pairingError = error.localizedDescription
-                        }
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: { Text("The code appears at the top of the Stats Companion menu on your Mac.") }
+            .sheet(item: $pairingDevice) { device in
+                PasscodeEntryView(device: device, store: store) { dismiss() }
+            }
             .alert("Pairing failed", isPresented: Binding(
                 get: { pairingError != nil },
                 set: { if !$0 { pairingError = nil } }

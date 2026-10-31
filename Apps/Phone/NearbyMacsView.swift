@@ -11,12 +11,7 @@ private enum PairingAppearance {
 struct NearbyMacsView: View {
     @ObservedObject var store: NearbyMacStore
     @State private var showConnections = false
-    @State private var showPasscodePrompt = false
     @State private var pairingDevice: NearbyMacStore.Device?
-    @State private var passcode = ""
-    @State private var phoneName = "iPhone"
-    @State private var pairingError: String?
-    @State private var isPairing = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -70,7 +65,6 @@ struct NearbyMacsView: View {
                                 .background(PairingAppearance.card, in: RoundedRectangle(cornerRadius: 22))
                             }
                             .buttonStyle(.plain)
-                            .disabled(isPairing)
                         }
                         if store.devices.isEmpty {
                             ContentUnavailableView("Searching for Macs", systemImage: "network",
@@ -127,41 +121,14 @@ struct NearbyMacsView: View {
         .background(PairingAppearance.background.ignoresSafeArea())
         .foregroundStyle(.white)
         .sheet(isPresented: $showConnections) { PairingView(store: store) }
-        .alert("Enter Mac passcode", isPresented: $showPasscodePrompt) {
-            TextField("Five-digit passcode", text: $passcode)
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-            TextField("This phone's name", text: $phoneName)
-            Button("Pair") { pair() }
-            Button("Cancel", role: .cancel) { pairingDevice = nil }
-        } message: {
-            Text("Copy the code from Stats Companion on your Mac and enter it here.")
+        .sheet(item: $pairingDevice) { device in
+            PasscodeEntryView(device: device, store: store, onPaired: {})
         }
-        .alert("Pairing failed", isPresented: Binding(
-            get: { pairingError != nil },
-            set: { if !$0 { pairingError = nil } }
-        )) {
-            Button("OK") { pairingError = nil }
-        } message: { Text(pairingError ?? "") }
     }
 
     private func choose(_ device: NearbyMacStore.Device) {
         if store.select(device) { return }
         pairingDevice = device
-        passcode = ""
-        showPasscodePrompt = true
-    }
-
-    private func pair() {
-        guard let pairingDevice else { return }
-        isPairing = true
-        store.pairWithPasscode(pairingDevice, code: passcode, phoneName: phoneName) { result in
-            isPairing = false
-            switch result {
-            case .success: self.pairingDevice = nil
-            case .failure(let error): pairingError = error.localizedDescription
-            }
-        }
     }
 }
 
