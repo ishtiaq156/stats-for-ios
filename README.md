@@ -5,12 +5,12 @@
 **See your Mac's activity from your iPhone.** Stats is a native iPhone dashboard paired with a lightweight macOS menu bar companion. Both apps communicate on your local network without an account or cloud service.
 
 > [!NOTE]
-> **Early prototype.** The compact macOS menu and Settings interface have been iterated through hands-on UI feedback. Automated pairing tests pass, but the five-digit passcode flow still needs an end-to-end physical-iPhone check and independent protocol review before a public release.
+> **Early prototype.** The compact macOS menu and Settings interface have been iterated through hands-on UI feedback. Automated pairing tests pass and pairing has been exercised on a physical iPhone. Broader device testing and an independent protocol review are still needed before a public release.
 
 ## What it does
 
 - **Live Mac activity:** CPU utilization, memory usage, free and total startup-disk space, and network download/upload rates.
-- **iPhone onboarding, overview, and charts:** First-run Mac setup and discovery, followed by four live metric cards, detail screens, recent readings, and connecting and disconnected states.
+- **iPhone onboarding, overview, and charts:** First-run Mac setup and discovery, a Nearby Macs screen for returning or disconnected users, and four live metric cards with detail screens and recent readings once connected.
 - **Compact Mac menu and Settings:** Network and connected-phone status, a five-digit passcode with refresh, copy, and expiry, Open at login, update checks, Dock/Menu Bar visibility, and paired-phone management. When Dock visibility is enabled, clicking the running app's Dock icon opens Settings. Tab/Shift-Tab navigate controls in both views; Settings shows its native keyboard-focus indicator when tabbing and clears the keyboard-navigation presentation after a pointer click.
 - **Matching app icons:** The iPhone Home Screen, Mac Dock, menu bar, and Mac About panel share the original blue activity-chart artwork.
 - **Local pairing:** Bonjour discovery plus manual IP/port fallback; a different encrypted credential is issued to every paired phone, which can be revoked independently.
@@ -32,8 +32,8 @@ The project takes inspiration from [Stats](https://github.com/exelban/stats) for
 
 1. Open **`StatsForIOS.xcodeproj`** in Xcode. Run the **`StatsCompanion`** scheme on your Mac and open **Stats Companion** from the menu bar.
 2. Select the **`Stats`** scheme, choose your iPhone, configure your **Personal Team** for signing, and run it. Allow **Local Network** access when prompted.
-3. On iPhone, choose **Connect a Mac** (or **Add Mac**). Select the discovered Mac, then enter the **five-digit passcode** shown at the top of the Mac menu. If discovery fails, expand **Connect using IP address**; click the **info icon beside Network status** in the companion's Settings and use the circular copy icon beside the local address and port, then enter the passcode.
-4. View live CPU, Memory, Storage, and Network values. Tap any card for details and recent history.
+3. Follow the iPhone welcome screens, then select the Mac in **Nearby Macs** and enter the **five-digit passcode** shown at the top of the Mac menu. If discovery fails, open the connection settings and expand **Connect using IP address**; click the **info icon beside Network status** in the companion's Settings and use the circular copy icon beside the local address and port, then enter the passcode.
+4. View live CPU, Memory, Storage, and Network values. Tap any card for details and recent history. After reopening the iPhone app or losing the connection, select a reachable Mac from **Nearby Macs** to return to the dashboard.
 
 The passcode lasts five minutes; the **refresh** icon (to the left of Copy in both Mac views) generates a different code and invalidates the old one. The old digits remain visible until the replacement is available, avoiding UI flicker. One successful pairing also consumes the code. Three failed attempts pause pairing until refresh. The Mac remembers each paired phone, and **Settings** lets you revoke individual access.
 
