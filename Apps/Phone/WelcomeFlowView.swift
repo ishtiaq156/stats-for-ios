@@ -25,10 +25,46 @@ struct WelcomeFlowView: View {
     @AppStorage("StatsForIOS.setupStep") private var step = 0
     @StateObject private var bluetooth = BluetoothPermission()
     @State private var showPairing = false
+    @State private var showSuccess = false
+    @State private var showPairingTip = false
     @State private var searchFinished = false
+    @AppStorage("StatsForIOS.pairingTipSeen") private var pairingTipSeen = false
     @Environment(\.openURL) private var openURL
 
     var body: some View {
+        ZStack {
+            if step >= 5 {
+                NearbyMacsView(store: store)
+            } else {
+                setupPages
+            }
+            if showSuccess {
+                SetupSuccessView {
+                    showSuccess = false
+                    if !pairingTipSeen { showPairingTip = true }
+                }
+                .zIndex(1)
+            }
+        }
+        .background(SetupStyle.background.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .onAppear {
+            if step >= 4 { store.startDiscovery() }
+            if step >= 5 && !pairingTipSeen { showPairingTip = true }
+        }
+        .task(id: step) {
+            guard step == 4 else { return }
+            searchFinished = false
+            try? await Task.sleep(for: .seconds(5))
+            if !Task.isCancelled { searchFinished = true }
+        }
+        .sheet(isPresented: $showPairing) { PairingView(store: store) }
+        .sheet(isPresented: $showPairingTip, onDismiss: { pairingTipSeen = true }) {
+            PairingTipView()
+        }
+    }
+
+    private var setupPages: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -50,17 +86,6 @@ struct WelcomeFlowView: View {
         }
         .background(SetupStyle.background.ignoresSafeArea())
         .foregroundStyle(.white)
-        .preferredColorScheme(.dark)
-        .onAppear {
-            if step >= 4 { store.startDiscovery() }
-        }
-        .task(id: step) {
-            guard step >= 4 else { return }
-            searchFinished = false
-            try? await Task.sleep(for: .seconds(5))
-            if !Task.isCancelled { searchFinished = true }
-        }
-        .sheet(isPresented: $showPairing) { PairingView(store: store) }
     }
 
     @ViewBuilder private var heading: some View {
@@ -179,7 +204,10 @@ struct WelcomeFlowView: View {
             store.startDiscovery()
             step = 4
         default:
-            if !store.devices.isEmpty { showPairing = true }
+            if !store.devices.isEmpty {
+                showSuccess = true
+                step = 5
+            }
         }
     }
 }
