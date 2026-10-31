@@ -4,6 +4,7 @@ DerivedData/
 dist/
 *.xcuserstate
 xcuserdata/
+.idea/
 .swiftpm/
 *.xcarchive
 *.ipa

@@ -51,11 +51,9 @@ private struct ChartPoint: Identifiable {
 struct MetricDetailView: View {
     let kind: MetricKind
     @ObservedObject var store: NearbyMacStore
-    let preview: MetricSnapshot
 
-    private var latest: MetricSnapshot { store.snapshot ?? preview }
-    private var isPreview: Bool { store.selectedName == nil }
-    private var isAwaitingReading: Bool { !isPreview && store.snapshot == nil }
+    private var latest: MetricSnapshot { store.snapshot ?? MetricSnapshot(machineName: store.selectedName ?? "Mac") }
+    private var isAwaitingReading: Bool { store.snapshot == nil }
 
     private var points: [ChartPoint] {
         store.history.flatMap { sample -> [ChartPoint] in
@@ -104,7 +102,7 @@ struct MetricDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(kind.title)
                                 .font(.subheadline.weight(.semibold))
-                            Text(isPreview ? "Sample values" : store.selectedName ?? "Mac")
+                            Text(store.selectedName ?? "Mac")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -158,11 +156,9 @@ struct MetricDetailView: View {
                         }
                     } else {
                         ContentUnavailableView(
-                            isPreview ? "Pair a Mac to see history" : "Waiting for readings",
+                            "Waiting for readings",
                             systemImage: "chart.xyaxis.line",
-                            description: Text(isPreview
-                                              ? "History appears after you connect to a Mac."
-                                              : "The graph appears after two readings arrive from your Mac.")
+                            description: Text("The graph appears after two readings arrive from your Mac.")
                         )
                         .frame(maxWidth: .infinity)
                     }
@@ -185,9 +181,7 @@ struct MetricDetailView: View {
                         row("Upload", MetricFormat.rate(latest.networkSentBytesPerSecond))
                     }
                     Divider()
-                    if isPreview {
-                        row("Data source", "Sample values")
-                    } else if let reading = store.snapshot?.timestamp {
+                    if let reading = store.snapshot?.timestamp {
                         row("Last reading", reading.formatted(date: .abbreviated, time: .shortened))
                     } else {
                         row("Last reading", "Waiting for Mac")

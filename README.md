@@ -10,8 +10,8 @@
 ## What it does
 
 - **Live Mac activity:** CPU utilization, memory usage, free and total startup-disk space, and network download/upload rates.
-- **iPhone overview and charts:** Four metric cards, detail screens, recent readings, and clear sample, connecting, live, and disconnected states.
-- **Compact Mac menu and Settings:** Network and connected-phone status, a five-digit passcode with refresh, copy, and expiry, Open at login, update checks, Dock/Menu Bar visibility, and paired-phone management. Tab/Shift-Tab navigate controls in both views; Settings shows its native keyboard-focus indicator when tabbing and clears the keyboard-navigation presentation after a pointer click.
+- **iPhone onboarding, overview, and charts:** First-run Mac setup and discovery, followed by four live metric cards, detail screens, recent readings, and connecting and disconnected states.
+- **Compact Mac menu and Settings:** Network and connected-phone status, a five-digit passcode with refresh, copy, and expiry, Open at login, update checks, Dock/Menu Bar visibility, and paired-phone management. When Dock visibility is enabled, clicking the running app's Dock icon opens Settings. Tab/Shift-Tab navigate controls in both views; Settings shows its native keyboard-focus indicator when tabbing and clears the keyboard-navigation presentation after a pointer click.
 - **Matching app icons:** The iPhone Home Screen, Mac Dock, menu bar, and Mac About panel share the original blue activity-chart artwork.
 - **Local pairing:** Bonjour discovery plus manual IP/port fallback; a different encrypted credential is issued to every paired phone, which can be revoked independently.
 - **Battery data where available:** Included in the Mac's snapshot; a dedicated battery card is not yet part of the iPhone overview.

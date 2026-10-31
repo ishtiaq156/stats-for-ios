@@ -256,8 +256,26 @@ final class StatsCompanionModel: ObservableObject {
     }
 }
 
+/// A Dock click reopens an already-running app. Forward that event to
+/// SwiftUI's Settings scene instead of creating a second AppKit window.
+@MainActor
+final class CompanionDockReopenDelegate: NSObject, NSApplicationDelegate {
+    var openSettings: (() -> Void)?
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        guard sender.activationPolicy() == .regular,
+              let openSettings else { return true }
+        openSettings()
+        // We presented the existing Settings scene; don't let AppKit open a
+        // generic document window or perform any other default reopen work.
+        return false
+    }
+}
+
 @main
 struct StatsCompanionApp: App {
+    @NSApplicationDelegateAdaptor(CompanionDockReopenDelegate.self) private var dockDelegate
+    @Environment(\.openSettings) private var openSettings
     @StateObject private var model = StatsCompanionModel()
     var body: some Scene {
         MenuBarExtra(isInserted: Binding(
@@ -274,7 +292,35 @@ struct StatsCompanionApp: App {
                 .accessibilityLabel("Stats Companion")
         }
         .menuBarExtraStyle(.window)
-        Settings {
+        companionSettingsScene
+        #if DEBUG
+        WindowGroup("Settings Preview") {
+            if ProcessInfo.processInfo.environment["STATS_UI_PREVIEW"] == "1" {
+                CompanionSettings(model: model)
+            } else {
+                EmptyView()
+            }
+        }
+        // Debug-only preview should not contribute File > New Window or
+        // other document-style menu commands when the Dock is visible.
+        .commandsRemoved()
+        #endif
+    }
+
+    private var companionSettingsScene: some Scene {
+        let openSettings = openSettings
+        let dockDelegate = dockDelegate
+        let model = model
+        // Register from App.body rather than Settings.onAppear: the Settings
+        // window may never have opened before the first Dock click.
+        DispatchQueue.main.async {
+            dockDelegate.openSettings = {
+                model.settingsPage = .home
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
+            }
+        }
+        return Settings {
             CompanionSettings(model: model)
         }
         .commands {
@@ -290,17 +336,5 @@ struct StatsCompanionApp: App {
                 .labelStyle(.titleAndIcon)
             }
         }
-        #if DEBUG
-        WindowGroup("Settings Preview") {
-            if ProcessInfo.processInfo.environment["STATS_UI_PREVIEW"] == "1" {
-                CompanionSettings(model: model)
-            } else {
-                EmptyView()
-            }
-        }
-        // Debug-only preview should not contribute File > New Window or
-        // other document-style menu commands when the Dock is visible.
-        .commandsRemoved()
-        #endif
     }
 }

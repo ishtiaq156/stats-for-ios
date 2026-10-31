@@ -7,6 +7,8 @@
         <string>_macactivity._tcp</string>
     </array>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>Find and connect to your Mac to display its activity.</string>
+    <string>Find Stats Companion on your local network and connect to your Mac.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Allow nearby device support. Stats currently connects to your Mac over your local network.</string>
 </dict>
 </plist>

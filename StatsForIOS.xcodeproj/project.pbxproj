@@ -15,6 +15,7 @@
 		7ED20571DA84D1062E23E1CC /* CompanionUnavailableHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0127FBCD27412EB1D6F03D5C /* CompanionUnavailableHelp.swift */; };
 		843CF07C2155F2B4DED099CE /* PhoneRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */; };
 		95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65E5547A50E26C1DDF23DCD /* StatsApp.swift */; };
+		A3B9D7E0F2C84156A12B3456 /* WelcomeFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */; };
 		A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */; };
 		AE37237A302B37A6D4C313B4 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = ABA880534490FDC0A2FFDD1F /* ActivityCore */; };
 		CFA21E6E662297D19C9AD7A3 /* CompanionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A86747CBA2BDA359FF531E /* CompanionMenu.swift */; };
@@ -39,6 +40,7 @@
 		8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionTabNavigation.swift; sourceTree = "<group>"; };
 		924C512394F1C887E0A896CD /* PasscodePairer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasscodePairer.swift; sourceTree = "<group>"; };
 		B3B8212C8C6D7225D303E161 /* CompanionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettings.swift; sourceTree = "<group>"; };
+		B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeFlowView.swift; sourceTree = "<group>"; };
 		C1CE0F9FCA25EC12CC82A05E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C483E76106913FF006E13F1E /* StatsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCompanionApp.swift; sourceTree = "<group>"; };
 		D65E5547A50E26C1DDF23DCD /* StatsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApp.swift; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
 				924C512394F1C887E0A896CD /* PasscodePairer.swift */,
 				D65E5547A50E26C1DDF23DCD /* StatsApp.swift */,
+				B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */,
 			);
 			name = Phone;
 			path = Apps/Phone;
@@ -252,6 +255,7 @@
 				5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */,
 				F2CA92A457A8725596A9E99B /* PasscodePairer.swift in Sources */,
 				95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */,
+				A3B9D7E0F2C84156A12B3456 /* WelcomeFlowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

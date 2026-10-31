@@ -4,22 +4,32 @@ import SwiftUI
 @main
 struct StatsApp: App {
     var body: some Scene {
-        WindowGroup { OverviewView() }
+        WindowGroup { PhoneRootView() }
+    }
+}
+
+private struct PhoneRootView: View {
+    @StateObject private var nearby = NearbyMacStore()
+
+    var body: some View {
+        if nearby.selectedName == nil {
+            WelcomeFlowView(store: nearby)
+        } else {
+            OverviewView(nearby: nearby)
+        }
     }
 }
 
 private struct OverviewView: View {
-    @StateObject private var nearby = NearbyMacStore()
-    @State private var preview = PreviewSnapshot()
+    @ObservedObject var nearby: NearbyMacStore
     @State private var showPairing = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private enum ConnectionState {
-        case preview, connecting, online, offline
+        case connecting, online, offline
     }
 
     private var connectionState: ConnectionState {
-        guard nearby.selectedName != nil else { return .preview }
         if nearby.status.hasPrefix("Disconnected") || nearby.status.hasPrefix("Cannot connect") {
             return .offline
         }
@@ -27,36 +37,29 @@ private struct OverviewView: View {
         return .connecting
     }
 
-    private var displayed: MetricSnapshot {
-        nearby.snapshot ?? (nearby.selectedName == nil
-            ? preview.snapshot : MetricSnapshot(machineName: nearby.selectedName ?? "Mac"))
-    }
+    private var displayed: MetricSnapshot { nearby.snapshot ?? MetricSnapshot(machineName: nearby.selectedName ?? "Mac") }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     deviceHeader
-                    if nearby.selectedName == nil {
-                        pairingPrompt
-                    } else {
-                        connectionStatus
-                    }
+                    connectionStatus
 
-                    Text(nearby.selectedName == nil ? "Sample dashboard" : "System activity")
+                    Text("System activity")
                         .font(.headline)
                         .accessibilityAddTraits(.isHeader)
 
                     LazyVGrid(columns: metricColumns, spacing: 12) {
                         NavigationLink {
-                            MetricDetailView(kind: .cpu, store: nearby, preview: displayed)
+                            MetricDetailView(kind: .cpu, store: nearby)
                         } label: {
                             MetricCard(title: "CPU", icon: "cpu", tint: .orange,
                                        value: MetricFormat.percent(displayed.cpuFraction),
                                        detail: "Processor load", fraction: displayed.cpuFraction)
                         }
                         NavigationLink {
-                            MetricDetailView(kind: .memory, store: nearby, preview: displayed)
+                            MetricDetailView(kind: .memory, store: nearby)
                         } label: {
                             MetricCard(title: "Memory", icon: "memorychip", tint: .purple,
                                        value: MetricFormat.bytes(displayed.memoryUsedBytes),
@@ -68,7 +71,7 @@ private struct OverviewView: View {
 
                     VStack(spacing: 12) {
                         NavigationLink {
-                            MetricDetailView(kind: .storage, store: nearby, preview: displayed)
+                            MetricDetailView(kind: .storage, store: nearby)
                         } label: {
                             MetricCard(title: "Storage", icon: "internaldrive", tint: .blue,
                                        value: MetricFormat.bytes(displayed.diskFreeBytes),
@@ -76,7 +79,7 @@ private struct OverviewView: View {
                                        fraction: diskUsedFraction(displayed))
                         }
                         NavigationLink {
-                            MetricDetailView(kind: .network, store: nearby, preview: displayed)
+                            MetricDetailView(kind: .network, store: nearby)
                         } label: {
                             NetworkCard(snapshot: displayed)
                         }
@@ -91,16 +94,10 @@ private struct OverviewView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showPairing = true } label: {
-                        Image(systemName: nearby.selectedName == nil ? "plus.circle" : "desktopcomputer.and.arrow.down")
+                        Image(systemName: "desktopcomputer.and.arrow.down")
                     }
-                    .accessibilityLabel(nearby.selectedName == nil ? "Add Mac" : "Manage Macs")
+                    .accessibilityLabel("Manage Macs")
                 }
-            }
-        }
-        .task {
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(2))
-                if nearby.selectedName == nil { preview.advance() }
             }
         }
         .sheet(isPresented: $showPairing) { PairingView(store: nearby) }
@@ -128,17 +125,15 @@ private struct OverviewView: View {
                 .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 4) {
-                Text(nearby.selectedName ?? "Your Mac")
+            Text(nearby.selectedName ?? "Mac")
                     .font(.headline)
-                Text(nearby.selectedName == nil ? "No Mac connected" : connectionTitle)
+                Text(connectionTitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            if nearby.selectedName != nil {
-                Button("Change") { showPairing = true }
-                    .font(.subheadline.weight(.medium))
-            }
+            Button("Change") { showPairing = true }
+                .font(.subheadline.weight(.medium))
         }
         .padding(16)
         .statsCardBackground()
@@ -146,7 +141,6 @@ private struct OverviewView: View {
 
     private var connectionTitle: String {
         switch connectionState {
-        case .preview: "Sample readings"
         case .connecting: "Connecting…"
         case .online: "Receiving live readings"
         case .offline: "Connection unavailable"
@@ -168,29 +162,9 @@ private struct OverviewView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var pairingPrompt: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("See your Mac at a glance")
-                .font(.headline)
-            Text("Pair with Stats Companion on the same network to see live CPU, memory, storage, and network activity.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Button { showPairing = true } label: {
-                Label("Connect a Mac", systemImage: "plus.circle.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            Text("The readings below are examples.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(18)
-        .statsCardBackground()
-    }
 }
 
-private struct PairingView: View {
+struct PairingView: View {
     @ObservedObject var store: NearbyMacStore
     @Environment(\.dismiss) private var dismiss
     @State private var pairingDevice: NearbyMacStore.Device?
@@ -446,44 +420,5 @@ extension View {
                     .strokeBorder(Color(uiColor: .separator).opacity(0.12), lineWidth: 1)
                     .allowsHitTesting(false)
             }
-    }
-}
-
-private struct PreviewSnapshot {
-    private var tick = 0
-    private(set) var snapshot = MetricSnapshot(
-        machineName: "Your Mac",
-        cpuFraction: 0.27,
-        memoryUsedBytes: 8_400_000_000,
-        memoryTotalBytes: 16_000_000_000,
-        diskFreeBytes: 241_000_000_000,
-        diskTotalBytes: 500_000_000_000,
-        networkReceivedBytesPerSecond: 1_400_000,
-        networkSentBytesPerSecond: 230_000
-    )
-
-    var memoryFraction: Double? {
-        guard let used = snapshot.memoryUsedBytes, let total = snapshot.memoryTotalBytes, total > 0 else { return nil }
-        return Double(used) / Double(total)
-    }
-
-    var diskUsedFraction: Double? {
-        guard let free = snapshot.diskFreeBytes, let total = snapshot.diskTotalBytes, total > 0 else { return nil }
-        return 1 - Double(free) / Double(total)
-    }
-
-    mutating func advance() {
-        tick += 1
-        let wave = sin(Double(tick) * 0.65)
-        snapshot = MetricSnapshot(
-            machineName: "Your Mac",
-            cpuFraction: 0.28 + wave * 0.12,
-            memoryUsedBytes: UInt64(8_400_000_000 + wave * 300_000_000),
-            memoryTotalBytes: 16_000_000_000,
-            diskFreeBytes: 241_000_000_000,
-            diskTotalBytes: 500_000_000_000,
-            networkReceivedBytesPerSecond: 1_400_000 + wave * 600_000,
-            networkSentBytesPerSecond: 230_000 + wave * 100_000
-        )
     }
 }
