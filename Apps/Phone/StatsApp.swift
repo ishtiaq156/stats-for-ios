@@ -13,13 +13,21 @@ private struct PhoneRootView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        Group {
-            if nearby.sessionActive {
+        NavigationStack {
+            Group {
+                if nearby.selectedName != nil {
+                    NearbyMacsView(store: nearby)
+                } else {
+                    WelcomeFlowView(store: nearby)
+                }
+            }
+            .navigationTitle("Nearby Macs")
+            .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(isPresented: Binding(
+                get: { nearby.sessionActive },
+                set: { if !$0 { nearby.endSession() } }
+            )) {
                 OverviewView(nearby: nearby)
-            } else if nearby.selectedName != nil {
-                NearbyMacsView(store: nearby)
-            } else {
-                WelcomeFlowView(store: nearby)
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -34,7 +42,8 @@ private struct PhoneRootView: View {
 
 private struct OverviewView: View {
     @ObservedObject var nearby: NearbyMacStore
-    @State private var showPairing = false
+    @State private var showSettings = false
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private enum ConnectionState {
@@ -54,67 +63,67 @@ private struct OverviewView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    deviceHeader
-                    connectionStatus
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                deviceHeader
+                connectionStatus
 
-                    Text("System activity")
-                        .font(.headline)
-                        .accessibilityAddTraits(.isHeader)
+                Text("System activity")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
 
-                    LazyVGrid(columns: metricColumns, spacing: 12) {
-                        NavigationLink {
-                            MetricDetailView(kind: .cpu, store: nearby)
-                        } label: {
-                            MetricCard(title: "CPU", icon: "cpu", tint: .orange,
-                                       value: MetricFormat.percent(displayed.cpuFraction),
-                                       detail: "Processor load", fraction: displayed.cpuFraction)
-                        }
-                        NavigationLink {
-                            MetricDetailView(kind: .memory, store: nearby)
-                        } label: {
-                            MetricCard(title: "Memory", icon: "memorychip", tint: .purple,
-                                       value: MetricFormat.bytes(displayed.memoryUsedBytes),
-                                       detail: "of \(MetricFormat.bytes(displayed.memoryTotalBytes)) used",
-                                       fraction: fraction(displayed.memoryUsedBytes, displayed.memoryTotalBytes))
-                        }
+                LazyVGrid(columns: metricColumns, spacing: 12) {
+                    NavigationLink {
+                        MetricDetailView(kind: .cpu, store: nearby)
+                    } label: {
+                        MetricCard(title: "CPU", icon: "cpu", tint: .orange,
+                                   value: MetricFormat.percent(displayed.cpuFraction),
+                                   detail: "Processor load", fraction: displayed.cpuFraction)
                     }
-                    .buttonStyle(.plain)
-
-                    VStack(spacing: 12) {
-                        NavigationLink {
-                            MetricDetailView(kind: .storage, store: nearby)
-                        } label: {
-                            MetricCard(title: "Storage", icon: "internaldrive", tint: .blue,
-                                       value: MetricFormat.bytes(displayed.diskFreeBytes),
-                                       detail: "free of \(MetricFormat.bytes(displayed.diskTotalBytes))",
-                                       fraction: diskUsedFraction(displayed))
-                        }
-                        NavigationLink {
-                            MetricDetailView(kind: .network, store: nearby)
-                        } label: {
-                            NetworkCard(snapshot: displayed)
-                        }
+                    NavigationLink {
+                        MetricDetailView(kind: .memory, store: nearby)
+                    } label: {
+                        MetricCard(title: "Memory", icon: "memorychip", tint: .purple,
+                                   value: MetricFormat.bytes(displayed.memoryUsedBytes),
+                                   detail: "of \(MetricFormat.bytes(displayed.memoryTotalBytes)) used",
+                                   fraction: fraction(displayed.memoryUsedBytes, displayed.memoryTotalBytes))
                     }
-                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 20)
+                .buttonStyle(.plain)
+
+                VStack(spacing: 12) {
+                    NavigationLink {
+                        MetricDetailView(kind: .storage, store: nearby)
+                    } label: {
+                        MetricCard(title: "Storage", icon: "internaldrive", tint: .blue,
+                                   value: MetricFormat.bytes(displayed.diskFreeBytes),
+                                   detail: "free of \(MetricFormat.bytes(displayed.diskTotalBytes))",
+                                   fraction: diskUsedFraction(displayed))
+                    }
+                    NavigationLink {
+                        MetricDetailView(kind: .network, store: nearby)
+                    } label: {
+                        NetworkCard(snapshot: displayed)
+                    }
+                }
+                .buttonStyle(.plain)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Stats")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showPairing = true } label: {
-                        Image(systemName: "desktopcomputer.and.arrow.down")
-                    }
-                    .accessibilityLabel("Manage Macs")
+            .padding(.horizontal, 18)
+            .padding(.vertical, 20)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .navigationTitle("Stats")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Dashboard settings")
             }
         }
-        .sheet(isPresented: $showPairing) { PairingView(store: nearby) }
+        .sheet(isPresented: $showSettings) { DashboardSettingsView(nearby: nearby) }
     }
 
     private var metricColumns: [GridItem] {
@@ -139,14 +148,14 @@ private struct OverviewView: View {
                 .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 4) {
-            Text(nearby.selectedDisplayName ?? "Mac")
+                Text(nearby.selectedDisplayName ?? "Mac")
                     .font(.headline)
                 Text(connectionTitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Change") { showPairing = true }
+            Button("Change") { dismiss() }
                 .font(.subheadline.weight(.medium))
         }
         .padding(16)
@@ -176,6 +185,23 @@ private struct OverviewView: View {
         .accessibilityElement(children: .combine)
     }
 
+}
+
+private struct DashboardSettingsView: View {
+    @ObservedObject var nearby: NearbyMacStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Connected Mac") {
+                    LabeledContent("Name", value: nearby.selectedDisplayName ?? "Mac")
+                }
+            }
+            .navigationTitle("Settings")
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+        }
+    }
 }
 
 struct PairingView: View {
