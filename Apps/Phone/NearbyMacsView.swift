@@ -13,6 +13,19 @@ struct NearbyMacsView: View {
     @State private var showConnections = false
     @State private var pairingDevice: NearbyMacStore.Device?
 
+    private var availableDevices: [NearbyMacStore.Device] {
+        store.devices.filter { $0.name != store.selectedName || store.selectedReachable }
+    }
+
+    private var offlineName: String? {
+        guard let name = store.selectedName, !store.selectedReachable else { return nil }
+        return name
+    }
+
+    private var hasAvailableMac: Bool {
+        !availableDevices.isEmpty || (store.selectedName != nil && store.selectedReachable)
+    }
+
     var body: some View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 0) {
@@ -38,50 +51,52 @@ struct NearbyMacsView: View {
                     .padding(.top, 9)
                     .padding(.bottom, 25)
 
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(store.devices) { device in
-                            Button { choose(device) } label: {
-                                HStack(spacing: 16) {
-                                    ZStack(alignment: .topLeading) {
-                                        Image(systemName: "macmini")
-                                            .font(.title2)
-                                            .frame(width: 42, height: 42)
-                                        Circle()
-                                            .fill(Color.yellow)
-                                            .frame(width: 8, height: 8)
-                                            .offset(x: -2, y: -1)
+                if let offlineName {
+                    ScrollView {
+                        VStack(spacing: 32) {
+                            if !availableDevices.isEmpty {
+                                VStack(spacing: 12) {
+                                    ForEach(availableDevices) { device in
+                                        macRow(name: device.name, available: true) { choose(device) }
                                     }
-                                    Text(device.name)
-                                        .font(.headline)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .lineLimit(2)
-                                    Image(systemName: "chevron.right")
-                                        .font(.headline)
-                                        .foregroundStyle(.white.opacity(0.45))
                                 }
-                                .padding(.horizontal, 20)
-                                .frame(minHeight: 72)
-                                .background(PairingAppearance.card, in: RoundedRectangle(cornerRadius: 22))
                             }
-                            .buttonStyle(.plain)
+                            OfflineSearchView()
+                                .frame(maxWidth: .infinity)
+                            offlineSection(name: offlineName)
                         }
-                        if store.devices.isEmpty {
-                            ContentUnavailableView("Searching for Macs", systemImage: "network",
-                                                   description: Text("Keep Stats Companion open on your Mac."))
-                                .frame(maxWidth: .infinity, minHeight: 180)
+                        .padding(.top, 20)
+                        .padding(.bottom, 28)
+                    }
+                    .scrollIndicators(.hidden)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(availableDevices) { device in
+                                macRow(name: device.name, available: true) { choose(device) }
+                            }
+                            if let name = store.selectedName, store.selectedReachable,
+                               !availableDevices.contains(where: { $0.name == name }) {
+                                macRow(name: name, available: true) { store.connectToSelectedMac() }
+                            }
+                            if !hasAvailableMac {
+                                ContentUnavailableView("Searching for Macs", systemImage: "network",
+                                                       description: Text("Keep Stats Companion open on your Mac."))
+                                    .frame(maxWidth: .infinity, minHeight: 180)
+                            }
                         }
                     }
+                    .scrollIndicators(.hidden)
                 }
-                .scrollIndicators(.hidden)
 
-                if !store.devices.isEmpty {
+                if hasAvailableMac, offlineName == nil {
                     VStack(spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 34))
                             .foregroundStyle(PairingAppearance.green)
-                        Text(store.devices.count == 1 ? "Mac is available to pair" :
-                             "\(store.devices.count) Macs are available to pair")
+                        Text(store.selectedName != nil ? "Your Mac is reachable" :
+                             availableDevices.count == 1 ? "Mac is available to pair" :
+                             "\(availableDevices.count) Macs are available to pair")
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.78))
                     }
@@ -127,8 +142,89 @@ struct NearbyMacsView: View {
     }
 
     private func choose(_ device: NearbyMacStore.Device) {
+        if device.name == store.selectedName, store.selectedReachable {
+            store.connectToSelectedMac()
+            return
+        }
         if store.select(device) { return }
         pairingDevice = device
+    }
+
+    private func macRow(name: String, available: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                ZStack(alignment: .topLeading) {
+                    Image(systemName: "macmini")
+                        .font(.title2)
+                        .frame(width: 42, height: 42)
+                    if available {
+                        Circle()
+                            .fill(Color.yellow)
+                            .frame(width: 8, height: 8)
+                            .offset(x: -2, y: -1)
+                    }
+                }
+                Text(name)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+                if available {
+                    Image(systemName: "chevron.right")
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+            }
+            .padding(.horizontal, 20)
+            .frame(minHeight: 72)
+            .background(PairingAppearance.card, in: RoundedRectangle(cornerRadius: 22))
+            .foregroundStyle(.white.opacity(available ? 1 : 0.3))
+        }
+        .buttonStyle(.plain)
+        .disabled(!available)
+    }
+
+    private func offlineSection(name: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Offline")
+                .font(.system(size: 38, weight: .bold))
+                .accessibilityAddTraits(.isHeader)
+            Text("This Mac isn't available right now")
+                .font(.system(size: 19))
+                .foregroundStyle(.white.opacity(0.52))
+                .padding(.bottom, 16)
+            macRow(name: name, available: false) {}
+        }
+    }
+}
+
+private struct OfflineSearchView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(PairingAppearance.blue.opacity(pulse ? 0.07 : 0.2), lineWidth: 2)
+                .frame(width: 188, height: 188)
+                .scaleEffect(pulse ? 1.06 : 0.9)
+            Circle()
+                .stroke(PairingAppearance.blue.opacity(pulse ? 0.25 : 0.12), lineWidth: 2)
+                .frame(width: 132, height: 132)
+                .scaleEffect(pulse ? 0.92 : 1.08)
+            Image(systemName: "wifi")
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(PairingAppearance.blue)
+                .frame(width: 90, height: 90)
+                .background(PairingAppearance.blue.opacity(0.18), in: Circle())
+        }
+        .frame(width: 206, height: 206)
+        .accessibilityLabel("Searching for your Mac")
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
     }
 }
 

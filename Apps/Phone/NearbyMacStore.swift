@@ -15,46 +15,38 @@ final class NearbyMacStore: ObservableObject {
     @Published private(set) var snapshot: MetricSnapshot?
     @Published private(set) var history: [MetricSnapshot] = []
     @Published private(set) var selectedName: String?
+    @Published private(set) var sessionActive = false
+    @Published private(set) var selectedReachable = false
     @Published private(set) var status = "Looking for Macs"
+    @Published private(set) var discoveryError: String?
 
-    private let browser: NWBrowser
+    private var browser: NWBrowser?
+    private var browserGeneration = UUID()
     private var selectedEndpoint: NWEndpoint?
     private var selectedKey: Data?
     private var selectedPhoneID: UUID?
+    private var activeSnapshotConnection: NWConnection?
+    private var activeHistoryConnection: NWConnection?
     private var pairer: PasscodePairer?
     private var timer: Timer?
     private var inFlight = false
     private var historyInFlight = false
     private var historyLoaded = false
-    private var browsing = false
+    private var discoveryRequested = false
+    private var discoveryPaused = false
     private var selectionGeneration = UUID()
+    private var snapshotRequestID = UUID()
+    private var sessionRequested = false
     private static let lastMacKey = "StatsForIOS.lastMac"
     private static let manualHostKey = "StatsForIOS.manualHost"
     private static let manualPortKey = "StatsForIOS.manualPort"
 
     init() {
-        browser = NWBrowser(for: .bonjour(type: SecurePacket.serviceType, domain: nil), using: .tcp)
-        browser.browseResultsChangedHandler = { [weak self] results, _ in
-            Task { @MainActor in
-                guard let self else { return }
-                self.devices = results.compactMap { result in
-                    guard case let .service(name, _, _, _) = result.endpoint else { return nil }
-                    return Device(endpoint: result.endpoint, name: name)
-                }.sorted { $0.name < $1.name }
-                if let name = self.selectedName,
-                   let device = self.devices.first(where: { $0.name == name }) {
-                    self.selectedEndpoint = device.endpoint
-                    self.refresh()
-                }
-            }
-        }
-        browser.stateUpdateHandler = { [weak self] state in
-            if case .failed(let error) = state {
-                Task { @MainActor in self?.status = "Discovery failed: \(error.localizedDescription)" }
-            }
-        }
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor in
+                self?.startBrowserIfNeeded()
+                self?.refresh()
+            }
         }
         restoreLastMac()
     }
@@ -80,14 +72,79 @@ final class NearbyMacStore: ObservableObject {
            let port = NWEndpoint.Port(rawValue: UInt16(portNumber)) {
             selectedEndpoint = .hostPort(host: .init(host), port: port)
             refresh()
-        } else {
-            startDiscovery()
         }
+        startDiscovery()
     }
 
     func startDiscovery() {
-        guard !browsing else { return }
-        browsing = true
+        discoveryRequested = true
+        startBrowserIfNeeded()
+    }
+
+    func suspendForBackground() {
+        discoveryPaused = true
+        browserGeneration = UUID()
+        browser?.cancel()
+        browser = nil
+        devices = []
+        sessionActive = false
+        sessionRequested = false
+        selectedReachable = false
+        snapshot = nil
+        selectionGeneration = UUID()
+        cancelSnapshotRequest()
+        cancelHistoryRequest()
+        historyLoaded = false
+    }
+
+    func resumeFromBackground() {
+        discoveryPaused = false
+        startBrowserIfNeeded()
+        refresh()
+    }
+
+    private func startBrowserIfNeeded() {
+        guard discoveryRequested, !discoveryPaused, browser == nil else { return }
+        let generation = UUID()
+        browserGeneration = generation
+        let browser = NWBrowser(for: .bonjour(type: SecurePacket.serviceType, domain: nil), using: .tcp)
+        self.browser = browser
+        browser.browseResultsChangedHandler = { [weak self] results, _ in
+            Task { @MainActor in
+                guard let self, self.browserGeneration == generation else { return }
+                self.devices = results.compactMap { result in
+                    guard case let .service(name, _, _, _) = result.endpoint else { return nil }
+                    return Device(endpoint: result.endpoint, name: name)
+                }.sorted { $0.name < $1.name }
+                if let name = self.selectedName,
+                   let device = self.devices.first(where: { $0.name == name }) {
+                    self.selectedEndpoint = device.endpoint
+                    self.refresh()
+                }
+            }
+        }
+        browser.stateUpdateHandler = { [weak self] state in
+            Task { @MainActor in
+                guard let self, self.browserGeneration == generation else { return }
+                switch state {
+                case .ready:
+                    self.discoveryError = nil
+                    if self.selectedName == nil { self.status = "Looking for Macs" }
+                case .failed(let error):
+                    self.discoveryError = error.localizedDescription
+                    self.browserGeneration = UUID()
+                    self.browser?.cancel()
+                    self.browser = nil
+                    self.devices = []
+                    if self.selectedName == nil {
+                        self.status = "Discovery failed: \(error.localizedDescription)"
+                    } else if let selectedName = self.selectedName, self.selectedEndpoint == nil {
+                        self.status = "Cannot connect · checking for \(selectedName)"
+                    }
+                default: break
+                }
+            }
+        }
         browser.start(queue: .main)
     }
 
@@ -116,9 +173,12 @@ final class NearbyMacStore: ObservableObject {
                         return
                     }
                     self.selectedName = device.name
+                    self.sessionRequested = true
+                    self.sessionActive = false
+                    self.selectedReachable = false
                     self.selectionGeneration = UUID()
-                    self.inFlight = false
-                    self.historyInFlight = false
+                    self.cancelSnapshotRequest()
+                    self.cancelHistoryRequest()
                     self.selectedEndpoint = device.endpoint
                     self.selectedKey = enrollment.credential
                     self.selectedPhoneID = enrollment.phoneID
@@ -162,9 +222,12 @@ final class NearbyMacStore: ObservableObject {
         guard let stored = PairingStore.load(for: device.name),
               let credential = PairingStore.decode(stored) else { return false }
         selectedName = device.name
+        sessionRequested = true
+        sessionActive = false
+        selectedReachable = false
         selectionGeneration = UUID()
-        inFlight = false
-        historyInFlight = false
+        cancelSnapshotRequest()
+        cancelHistoryRequest()
         selectedEndpoint = device.endpoint
         selectedKey = credential.key
         selectedPhoneID = credential.phoneID
@@ -177,6 +240,13 @@ final class NearbyMacStore: ObservableObject {
         return true
     }
 
+    func connectToSelectedMac() {
+        guard selectedName != nil, selectedReachable else { return }
+        sessionRequested = true
+        sessionActive = true
+        refresh()
+    }
+
     func hasSavedPairing(_ device: Device) -> Bool {
         guard let stored = PairingStore.load(for: device.name) else { return false }
         return PairingStore.decode(stored) != nil
@@ -185,9 +255,12 @@ final class NearbyMacStore: ObservableObject {
     func forget() {
         if let selectedName { PairingStore.delete(for: selectedName) }
         selectedName = nil
+        sessionRequested = false
+        sessionActive = false
+        selectedReachable = false
         selectionGeneration = UUID()
-        inFlight = false
-        historyInFlight = false
+        cancelSnapshotRequest()
+        cancelHistoryRequest()
         selectedEndpoint = nil
         selectedKey = nil
         selectedPhoneID = nil
@@ -214,34 +287,48 @@ final class NearbyMacStore: ObservableObject {
     }
 
     private func refresh() {
-        guard !inFlight, let endpoint = selectedEndpoint, let key = selectedKey,
+        guard !discoveryPaused, !inFlight, let endpoint = selectedEndpoint, let key = selectedKey,
               let phoneID = selectedPhoneID else { return }
         inFlight = true
         let generation = selectionGeneration
+        let requestID = UUID()
+        snapshotRequestID = requestID
         let connection = NWConnection(to: endpoint, using: .tcp)
+        activeSnapshotConnection = connection
         connection.stateUpdateHandler = { [weak self] state in
-            Task { @MainActor in self?.handle(state, on: connection, key: key, phoneID: phoneID, generation: generation) }
+            Task { @MainActor in self?.handle(state, on: connection, key: key, phoneID: phoneID,
+                                              generation: generation, requestID: requestID) }
         }
         connection.start(queue: .main)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(6))
+            guard let self, self.selectionGeneration == generation,
+                  self.snapshotRequestID == requestID, self.inFlight else { return }
+            connection.cancel()
+            self.fail()
+        }
     }
 
     private func handle(_ state: NWConnection.State, on connection: NWConnection, key: Data,
-                        phoneID: UUID, generation: UUID) {
-            guard selectionGeneration == generation else { connection.cancel(); return }
+                        phoneID: UUID, generation: UUID, requestID: UUID) {
+            guard selectionGeneration == generation, snapshotRequestID == requestID, inFlight else {
+                connection.cancel(); return
+            }
             switch state {
             case .ready:
                 guard let request = try? makeRequest("snapshot.v1", key: key, phoneID: phoneID) else {
-                    connection.cancel(); inFlight = false; return
+                    fail(); return
                 }
                 connection.send(content: SecurePacket.frame(request), completion: .contentProcessed { error in
                     if error != nil {
                         connection.cancel()
                         Task { @MainActor in
-                            if self.selectionGeneration == generation { self.fail() }
+                            if self.selectionGeneration == generation,
+                               self.snapshotRequestID == requestID, self.inFlight { self.fail() }
                         }
                     }
                 })
-                receiveHeader(on: connection, key: key, generation: generation)
+                receiveHeader(on: connection, key: key, generation: generation, requestID: requestID)
             case .failed:
                 connection.cancel()
                 fail()
@@ -253,24 +340,28 @@ final class NearbyMacStore: ObservableObject {
         try PairingWire.authenticatedRequest(command, phoneID: phoneID, key: key)
     }
 
-    private func receiveHeader(on connection: NWConnection, key: Data, generation: UUID) {
+    private func receiveHeader(on connection: NWConnection, key: Data, generation: UUID, requestID: UUID) {
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, _, error in
             Task { @MainActor in
                 guard let self else { connection.cancel(); return }
-                guard self.selectionGeneration == generation else { connection.cancel(); return }
+                guard self.selectionGeneration == generation,
+                      self.snapshotRequestID == requestID, self.inFlight else { connection.cancel(); return }
                 guard error == nil, let data, let length = SecurePacket.length(data) else {
                     connection.cancel(); self.fail(); return
                 }
-                self.receiveBody(on: connection, key: key, length: length, generation: generation)
+                self.receiveBody(on: connection, key: key, length: length,
+                                 generation: generation, requestID: requestID)
             }
         }
     }
 
-    private func receiveBody(on connection: NWConnection, key: Data, length: Int, generation: UUID) {
+    private func receiveBody(on connection: NWConnection, key: Data, length: Int,
+                             generation: UUID, requestID: UUID) {
         connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] body, _, _, error in
             Task { @MainActor in
                 defer { connection.cancel() }
-                guard self?.selectionGeneration == generation else { return }
+                guard self?.selectionGeneration == generation,
+                      self?.snapshotRequestID == requestID, self?.inFlight == true else { return }
                 guard error == nil, let body,
                       let plaintext = try? SecurePacket.open(body, using: key),
                       let snapshot = try? JSONDecoder().decode(MetricSnapshot.self, from: plaintext),
@@ -278,21 +369,42 @@ final class NearbyMacStore: ObservableObject {
                     self?.fail(); return
                 }
                 self?.snapshot = snapshot
+                self?.selectedReachable = true
+                if self?.sessionRequested == true { self?.sessionActive = true }
                 self?.append(snapshot)
                 self?.status = "Last update \(snapshot.timestamp.formatted(date: .omitted, time: .standard))"
                 self?.inFlight = false
+                self?.activeSnapshotConnection = nil
                 if self?.historyLoaded == false { self?.fetchHistory() }
             }
         }
     }
 
     private func fail() {
-        inFlight = false
+        cancelSnapshotRequest()
+        cancelHistoryRequest()
+        historyLoaded = false
+        selectedReachable = false
+        sessionRequested = false
+        sessionActive = false
         if let snapshot {
             status = "Disconnected · last update \(snapshot.timestamp.formatted(date: .omitted, time: .standard))"
         } else {
             status = "Cannot connect · check the Mac and pair again if needed"
         }
+    }
+
+    private func cancelSnapshotRequest() {
+        snapshotRequestID = UUID()
+        activeSnapshotConnection?.cancel()
+        activeSnapshotConnection = nil
+        inFlight = false
+    }
+
+    private func cancelHistoryRequest() {
+        activeHistoryConnection?.cancel()
+        activeHistoryConnection = nil
+        historyInFlight = false
     }
 
     private func append(_ sample: MetricSnapshot) {
@@ -307,6 +419,7 @@ final class NearbyMacStore: ObservableObject {
         historyInFlight = true
         let generation = selectionGeneration
         let connection = NWConnection(to: endpoint, using: .tcp)
+        activeHistoryConnection = connection
         connection.stateUpdateHandler = { [weak self] state in
             Task { @MainActor in
                 guard let self else { connection.cancel(); return }
@@ -314,33 +427,39 @@ final class NearbyMacStore: ObservableObject {
                 switch state {
                 case .ready:
                     guard let request = try? self.makeRequest("history.v1", key: key, phoneID: phoneID) else {
-                        connection.cancel(); self.historyInFlight = false; return
+                        self.cancelHistoryRequest(); return
                     }
                     connection.send(content: SecurePacket.frame(request), completion: .contentProcessed { error in
                         if error != nil {
-                            connection.cancel()
                             Task { @MainActor in
-                                if self.selectionGeneration == generation { self.historyInFlight = false }
+                                if self.selectionGeneration == generation,
+                                   self.activeHistoryConnection === connection { self.cancelHistoryRequest() }
                             }
                         }
                     })
                     self.receiveHistoryHeader(on: connection, key: key, generation: generation)
                 case .failed:
-                    connection.cancel()
-                    self.historyInFlight = false
+                    self.cancelHistoryRequest()
                 default: break
                 }
             }
         }
         connection.start(queue: .main)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard let self, self.selectionGeneration == generation,
+                  self.activeHistoryConnection === connection else { return }
+            self.cancelHistoryRequest()
+        }
     }
 
     private func receiveHistoryHeader(on connection: NWConnection, key: Data, generation: UUID) {
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, _, error in
             Task { @MainActor in
-                guard self?.selectionGeneration == generation else { connection.cancel(); return }
+                guard self?.selectionGeneration == generation,
+                      self?.activeHistoryConnection === connection else { connection.cancel(); return }
                 guard error == nil, let data, let length = SecurePacket.length(data) else {
-                    connection.cancel(); self?.historyInFlight = false; return
+                    self?.cancelHistoryRequest(); return
                 }
                 self?.receiveHistoryBody(on: connection, key: key, length: length, generation: generation)
             }
@@ -350,9 +469,9 @@ final class NearbyMacStore: ObservableObject {
     private func receiveHistoryBody(on connection: NWConnection, key: Data, length: Int, generation: UUID) {
         connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] body, _, _, error in
             Task { @MainActor in
-                defer { connection.cancel() }
-                guard self?.selectionGeneration == generation else { return }
-                self?.historyInFlight = false
+                guard self?.selectionGeneration == generation,
+                      self?.activeHistoryConnection === connection else { connection.cancel(); return }
+                defer { self?.cancelHistoryRequest() }
                 guard error == nil, let body,
                       let plaintext = try? SecurePacket.open(body, using: key),
                       let samples = try? JSONDecoder().decode([MetricSnapshot].self, from: plaintext) else { return }

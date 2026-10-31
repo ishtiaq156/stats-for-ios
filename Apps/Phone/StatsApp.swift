@@ -10,12 +10,24 @@ struct StatsApp: App {
 
 private struct PhoneRootView: View {
     @StateObject private var nearby = NearbyMacStore()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        if nearby.selectedName == nil {
-            WelcomeFlowView(store: nearby)
-        } else {
-            OverviewView(nearby: nearby)
+        Group {
+            if nearby.sessionActive {
+                OverviewView(nearby: nearby)
+            } else if nearby.selectedName != nil {
+                NearbyMacsView(store: nearby)
+            } else {
+                WelcomeFlowView(store: nearby)
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background: nearby.suspendForBackground()
+            case .active: nearby.resumeFromBackground()
+            default: break
+            }
         }
     }
 }
@@ -183,10 +195,10 @@ struct PairingView: View {
                 Section {
                     if store.devices.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
-                            Label(store.status.hasPrefix("Discovery failed") ? "Nearby search unavailable" : "Searching for Macs",
-                                  systemImage: store.status.hasPrefix("Discovery failed") ? "wifi.exclamationmark" : "magnifyingglass")
+                            Label(store.discoveryError != nil ? "Nearby search unavailable" : "Searching for Macs",
+                                  systemImage: store.discoveryError != nil ? "wifi.exclamationmark" : "magnifyingglass")
                                 .font(.headline)
-                            Text(store.status.hasPrefix("Discovery failed")
+                            Text(store.discoveryError != nil
                                  ? "You can still connect using the Mac's local IP address and port below."
                                  : "Open Stats Companion on your Mac. Both devices need to be on the same network.")
                                 .font(.subheadline)
