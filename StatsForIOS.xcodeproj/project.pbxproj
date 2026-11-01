@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		115A822EB9AD6CE2962535EB /* NearbyMacsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1A5135CC97F30780F39F90 /* NearbyMacsView.swift */; };
 		13B8CB1E91B04301901DD130 /* SystemSampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E74841E46E29A4BF5A3379DD /* SystemSampler.swift */; };
 		40B589D2B9803A479EBDC6AB /* CompanionTabNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */; };
 		537685DFECEC56A84B5B3174 /* MetricServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */; };
 		5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */; };
+		5E49D81D33E0C2BF792D8752 /* PasscodeEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E342F8893AC7873A498F8A2 /* PasscodeEntryView.swift */; };
 		6CEE3CF352D46EF107A93A3F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5223DFFFB29165946BA0ADD7 /* Assets.xcassets */; };
 		7ED20571DA84D1062E23E1CC /* CompanionUnavailableHelp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0127FBCD27412EB1D6F03D5C /* CompanionUnavailableHelp.swift */; };
 		843CF07C2155F2B4DED099CE /* PhoneRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */; };
 		95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D65E5547A50E26C1DDF23DCD /* StatsApp.swift */; };
-		A3B9D7E0F2C84156A12B3456 /* WelcomeFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */; };
-		C53A92B41D6E4F0A873219BC /* NearbyMacsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D64BA3C52E7F401B98432ACD /* NearbyMacsView.swift */; };
-		E75CB4D63F80512CA9543BDE /* PasscodeEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86DC5E74091623DBA654CEF /* PasscodeEntryView.swift */; };
 		A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */; };
 		AE37237A302B37A6D4C313B4 /* ActivityCore in Frameworks */ = {isa = PBXBuildFile; productRef = ABA880534490FDC0A2FFDD1F /* ActivityCore */; };
+		B718EE15EF1321124D5872E8 /* WelcomeFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFECEB5F859454B55F15BE01 /* WelcomeFlowView.swift */; };
 		CFA21E6E662297D19C9AD7A3 /* CompanionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A86747CBA2BDA359FF531E /* CompanionMenu.swift */; };
 		DBAAB382997972775BDEAFF4 /* CompanionSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B8212C8C6D7225D303E161 /* CompanionSettings.swift */; };
 		E42B682CBA8E18DDAD30F093 /* StatsCompanionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C483E76106913FF006E13F1E /* StatsCompanionApp.swift */; };
@@ -30,6 +30,7 @@
 
 /* Begin PBXFileReference section */
 		0127FBCD27412EB1D6F03D5C /* CompanionUnavailableHelp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionUnavailableHelp.swift; sourceTree = "<group>"; };
+		0E342F8893AC7873A498F8A2 /* PasscodeEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasscodeEntryView.swift; sourceTree = "<group>"; };
 		1749FADF689752233144DA9B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3C7DA6C333B77D3EE333CCB0 /* MetricServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricServer.swift; sourceTree = "<group>"; };
 		4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacStore.swift; sourceTree = "<group>"; };
@@ -42,15 +43,14 @@
 		8267715653437C5143D8C5D3 /* CompanionTabNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionTabNavigation.swift; sourceTree = "<group>"; };
 		924C512394F1C887E0A896CD /* PasscodePairer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasscodePairer.swift; sourceTree = "<group>"; };
 		B3B8212C8C6D7225D303E161 /* CompanionSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionSettings.swift; sourceTree = "<group>"; };
-		B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeFlowView.swift; sourceTree = "<group>"; };
-		D64BA3C52E7F401B98432ACD /* NearbyMacsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacsView.swift; sourceTree = "<group>"; };
-		F86DC5E74091623DBA654CEF /* PasscodeEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasscodeEntryView.swift; sourceTree = "<group>"; };
 		C1CE0F9FCA25EC12CC82A05E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C483E76106913FF006E13F1E /* StatsCompanionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsCompanionApp.swift; sourceTree = "<group>"; };
 		D65E5547A50E26C1DDF23DCD /* StatsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsApp.swift; sourceTree = "<group>"; };
 		E6C316937A3E43577F8A3C89 /* PhoneRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneRegistry.swift; sourceTree = "<group>"; };
 		E74841E46E29A4BF5A3379DD /* SystemSampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSampler.swift; sourceTree = "<group>"; };
 		E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricDetailView.swift; sourceTree = "<group>"; };
+		EFECEB5F859454B55F15BE01 /* WelcomeFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeFlowView.swift; sourceTree = "<group>"; };
+		FB1A5135CC97F30780F39F90 /* NearbyMacsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyMacsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,11 +125,11 @@
 				1749FADF689752233144DA9B /* Info.plist */,
 				E97BBEB5D34438C0E91700C8 /* MetricDetailView.swift */,
 				4D9264B739C9F0E69406BD8A /* NearbyMacStore.swift */,
+				FB1A5135CC97F30780F39F90 /* NearbyMacsView.swift */,
+				0E342F8893AC7873A498F8A2 /* PasscodeEntryView.swift */,
 				924C512394F1C887E0A896CD /* PasscodePairer.swift */,
 				D65E5547A50E26C1DDF23DCD /* StatsApp.swift */,
-				B4C8D9E1F3A25760B13C4567 /* WelcomeFlowView.swift */,
-				D64BA3C52E7F401B98432ACD /* NearbyMacsView.swift */,
-				F86DC5E74091623DBA654CEF /* PasscodeEntryView.swift */,
+				EFECEB5F859454B55F15BE01 /* WelcomeFlowView.swift */,
 			);
 			name = Phone;
 			path = Apps/Phone;
@@ -185,7 +185,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2710;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					0F4E41796EB919F98970E1A7 = {
 						ProvisioningStyle = Automatic;
@@ -259,11 +259,11 @@
 			files = (
 				A0BF0CB90B8BC4224EBC83EF /* MetricDetailView.swift in Sources */,
 				5A84CFAB63EBCC72857BAD9F /* NearbyMacStore.swift in Sources */,
+				115A822EB9AD6CE2962535EB /* NearbyMacsView.swift in Sources */,
+				5E49D81D33E0C2BF792D8752 /* PasscodeEntryView.swift in Sources */,
 				F2CA92A457A8725596A9E99B /* PasscodePairer.swift in Sources */,
 				95529F28AA89D5F7AE43552A /* StatsApp.swift in Sources */,
-				A3B9D7E0F2C84156A12B3456 /* WelcomeFlowView.swift in Sources */,
-				C53A92B41D6E4F0A873219BC /* NearbyMacsView.swift in Sources */,
-				E75CB4D63F80512CA9543BDE /* PasscodeEntryView.swift in Sources */,
+				B718EE15EF1321124D5872E8 /* WelcomeFlowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,6 +366,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -396,9 +397,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -412,6 +415,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -422,6 +426,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -452,9 +457,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -475,6 +482,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
