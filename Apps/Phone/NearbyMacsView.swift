@@ -14,11 +14,12 @@ struct NearbyMacsView: View {
     @State private var pairingDevice: NearbyMacStore.Device?
 
     private var availableDevices: [NearbyMacStore.Device] {
-        store.devices.filter { $0.name != store.selectedName || store.selectedReachable }
+        store.devices
     }
 
     private var offlineName: String? {
-        guard let name = store.selectedName, !store.selectedReachable else { return nil }
+        guard let name = store.selectedName, !store.selectedReachable,
+              !store.devices.contains(where: { $0.name == name }) else { return nil }
         return store.selectedDisplayName ?? name
     }
 
@@ -57,7 +58,10 @@ struct NearbyMacsView: View {
                             if !availableDevices.isEmpty {
                                 VStack(spacing: 12) {
                                     ForEach(availableDevices) { device in
-                                        macRow(name: store.displayName(for: device), available: true) { choose(device) }
+                                        macRow(name: store.displayName(for: device), available: true,
+                                               pairAgain: device.name == store.selectedName && !store.selectedReachable) {
+                                            choose(device)
+                                        }
                                     }
                                 }
                             }
@@ -73,7 +77,10 @@ struct NearbyMacsView: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             ForEach(availableDevices) { device in
-                                macRow(name: store.displayName(for: device), available: true) { choose(device) }
+                                macRow(name: store.displayName(for: device), available: true,
+                                       pairAgain: device.name == store.selectedName && !store.selectedReachable) {
+                                    choose(device)
+                                }
                             }
                             if let name = store.selectedName, store.selectedReachable,
                                !availableDevices.contains(where: { $0.name == name }) {
@@ -93,10 +100,10 @@ struct NearbyMacsView: View {
 
                 if hasAvailableMac, offlineName == nil {
                     VStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: store.selectedReachable ? "checkmark.circle.fill" : "plus.circle.fill")
                             .font(.system(size: 34))
-                            .foregroundStyle(PairingAppearance.green)
-                        Text(store.selectedName != nil ? "Your Mac is reachable" :
+                            .foregroundStyle(store.selectedReachable ? PairingAppearance.green : PairingAppearance.blue)
+                        Text(store.selectedReachable ? "Your Mac is reachable" :
                              availableDevices.count == 1 ? "Mac is available to pair" :
                              "\(availableDevices.count) Macs are available to pair")
                             .font(.subheadline)
@@ -144,15 +151,17 @@ struct NearbyMacsView: View {
     }
 
     private func choose(_ device: NearbyMacStore.Device) {
-        if device.name == store.selectedName, store.selectedReachable {
-            store.connectToSelectedMac()
+        if device.name == store.selectedName {
+            if store.selectedReachable { store.connectToSelectedMac() }
+            else { pairingDevice = device }
             return
         }
         if store.select(device) { return }
         pairingDevice = device
     }
 
-    private func macRow(name: String, available: Bool, action: @escaping () -> Void) -> some View {
+    private func macRow(name: String, available: Bool, pairAgain: Bool = false,
+                        action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 ZStack(alignment: .topLeading) {
@@ -166,10 +175,15 @@ struct NearbyMacsView: View {
                             .offset(x: -2, y: -1)
                     }
                 }
-                Text(name)
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(name).font(.headline).lineLimit(2)
+                    if pairAgain {
+                        Text("Pair again")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 if available {
                     Image(systemName: "chevron.right")
                         .font(.headline)
