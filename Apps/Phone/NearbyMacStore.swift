@@ -27,6 +27,9 @@ final class NearbyMacStore: ObservableObject {
     @Published private(set) var selectedReachable = false
     @Published private(set) var status = "Looking for Macs"
     @Published private(set) var discoveryError: String?
+    @Published private(set) var aboutInfo: MacAboutInfo?
+    @Published private(set) var aboutError: String?
+    @Published private(set) var refreshIntervalSeconds: Int
 
     private var browser: NWBrowser?
     private var browserGeneration = UUID()
@@ -35,6 +38,7 @@ final class NearbyMacStore: ObservableObject {
     private var selectedPhoneID: UUID?
     private var activeSnapshotConnection: NWConnection?
     private var activeHistoryConnection: NWConnection?
+    private var activeAboutConnection: NWConnection?
     private var pairer: PasscodePairer?
     private var timer: Timer?
     private var inFlight = false
@@ -49,15 +53,32 @@ final class NearbyMacStore: ObservableObject {
     private static let lastMacDisplayNameKey = "StatsForIOS.lastMacDisplayName"
     private static let manualHostKey = "StatsForIOS.manualHost"
     private static let manualPortKey = "StatsForIOS.manualPort"
+    private static let refreshIntervalKey = "StatsForIOS.refreshIntervalSeconds"
+    static let refreshIntervals = [2, 5, 10, 30]
 
     init() {
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        let storedInterval = UserDefaults.standard.integer(forKey: Self.refreshIntervalKey)
+        refreshIntervalSeconds = Self.refreshIntervals.contains(storedInterval) ? storedInterval : 2
+        scheduleRefresh()
+        restoreLastMac()
+    }
+
+    func setRefreshInterval(_ seconds: Int) {
+        guard Self.refreshIntervals.contains(seconds), refreshIntervalSeconds != seconds else { return }
+        refreshIntervalSeconds = seconds
+        UserDefaults.standard.set(seconds, forKey: Self.refreshIntervalKey)
+        scheduleRefresh()
+        refresh()
+    }
+
+    private func scheduleRefresh() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: TimeInterval(refreshIntervalSeconds), repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.startBrowserIfNeeded()
                 self?.refresh()
             }
         }
-        restoreLastMac()
     }
 
     private func restoreLastMac() {
@@ -105,6 +126,7 @@ final class NearbyMacStore: ObservableObject {
         selectionGeneration = UUID()
         cancelSnapshotRequest()
         cancelHistoryRequest()
+        cancelAboutRequest()
         historyLoaded = false
     }
 
@@ -252,6 +274,9 @@ final class NearbyMacStore: ObservableObject {
         selectionGeneration = UUID()
         cancelSnapshotRequest()
         cancelHistoryRequest()
+        cancelAboutRequest()
+        aboutInfo = nil
+        aboutError = nil
         selectedEndpoint = device.endpoint
         selectedKey = credential.key
         selectedPhoneID = credential.phoneID
@@ -296,6 +321,9 @@ final class NearbyMacStore: ObservableObject {
         selectionGeneration = UUID()
         cancelSnapshotRequest()
         cancelHistoryRequest()
+        cancelAboutRequest()
+        aboutInfo = nil
+        aboutError = nil
         selectedEndpoint = nil
         selectedKey = nil
         selectedPhoneID = nil
@@ -455,6 +483,86 @@ final class NearbyMacStore: ObservableObject {
         guard sample.version == MetricSnapshot.protocolVersion else { return }
         if history.last?.timestamp != sample.timestamp { history.append(sample) }
         if history.count > 900 { history.removeFirst(history.count - 900) }
+    }
+
+    func loadAbout() {
+        cancelAboutRequest()
+        aboutInfo = nil
+        aboutError = nil
+        guard let endpoint = selectedEndpoint, let key = selectedKey, let phoneID = selectedPhoneID else {
+            aboutError = "This Mac is unavailable."
+            return
+        }
+        let generation = selectionGeneration
+        let connection = NWConnection(to: endpoint, using: .tcp)
+        activeAboutConnection = connection
+        connection.stateUpdateHandler = { [weak self] state in
+            Task { @MainActor in
+                guard let self, self.selectionGeneration == generation,
+                      self.activeAboutConnection === connection else { connection.cancel(); return }
+                switch state {
+                case .ready:
+                    guard let request = try? self.makeRequest("about.v1", key: key, phoneID: phoneID) else {
+                        self.finishAbout(connection, error: "Couldn’t request Mac details.")
+                        return
+                    }
+                    connection.send(content: SecurePacket.frame(request), completion: .contentProcessed { error in
+                        if error != nil {
+                            Task { @MainActor in
+                                self.finishAbout(connection, error: "Couldn’t reach this Mac.")
+                            }
+                        }
+                    })
+                    self.receiveAboutHeader(on: connection, key: key, generation: generation)
+                case .failed:
+                    self.finishAbout(connection, error: "Couldn’t reach this Mac.")
+                default: break
+                }
+            }
+        }
+        connection.start(queue: .main)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            self?.finishAbout(connection, error: "Mac details timed out. Try again.")
+        }
+    }
+
+    private func receiveAboutHeader(on connection: NWConnection, key: Data, generation: UUID) {
+        connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] data, _, _, error in
+            Task { @MainActor in
+                guard let self, self.selectionGeneration == generation,
+                      self.activeAboutConnection === connection else { connection.cancel(); return }
+                guard error == nil, let data, let length = SecurePacket.length(data) else {
+                    self.finishAbout(connection, error: "Couldn’t read Mac details.")
+                    return
+                }
+                connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] body, _, _, error in
+                    Task { @MainActor in
+                        guard let self, self.selectionGeneration == generation,
+                              self.activeAboutConnection === connection else { connection.cancel(); return }
+                        guard error == nil, let body,
+                              let plaintext = try? SecurePacket.open(body, using: key),
+                              let info = try? JSONDecoder().decode(MacAboutInfo.self, from: plaintext) else {
+                            self.finishAbout(connection, error: "Couldn’t read Mac details.")
+                            return
+                        }
+                        self.aboutInfo = info
+                        self.finishAbout(connection, error: nil)
+                    }
+                }
+            }
+        }
+    }
+
+    private func finishAbout(_ connection: NWConnection, error: String?) {
+        guard activeAboutConnection === connection else { return }
+        if let error { aboutError = error }
+        cancelAboutRequest()
+    }
+
+    private func cancelAboutRequest() {
+        activeAboutConnection?.cancel()
+        activeAboutConnection = nil
     }
 
     private func fetchHistory() {

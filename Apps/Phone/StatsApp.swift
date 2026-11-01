@@ -43,20 +43,7 @@ private struct PhoneRootView: View {
 private struct OverviewView: View {
     @ObservedObject var nearby: NearbyMacStore
     @State private var showSettings = false
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private enum ConnectionState {
-        case connecting, online, offline
-    }
-
-    private var connectionState: ConnectionState {
-        if nearby.status.hasPrefix("Disconnected") || nearby.status.hasPrefix("Cannot connect") {
-            return .offline
-        }
-        if nearby.snapshot != nil, nearby.status.hasPrefix("Last update") { return .online }
-        return .connecting
-    }
 
     private var displayed: MetricSnapshot {
         nearby.snapshot ?? MetricSnapshot(machineName: nearby.selectedDisplayName ?? "Mac")
@@ -65,9 +52,6 @@ private struct OverviewView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                deviceHeader
-                connectionStatus
-
                 Text("System activity")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
@@ -140,67 +124,116 @@ private struct OverviewView: View {
         return 1 - Double(free) / Double(total)
     }
 
-    private var deviceHeader: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "desktopcomputer")
-                .font(.title3.weight(.medium))
-                .frame(width: 48, height: 48)
-                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
-                .foregroundStyle(Color.accentColor)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(nearby.selectedDisplayName ?? "Mac")
-                    .font(.headline)
-                Text(connectionTitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button("Change") { dismiss() }
-                .font(.subheadline.weight(.medium))
-        }
-        .padding(16)
-        .statsCardBackground()
-    }
-
-    private var connectionTitle: String {
-        switch connectionState {
-        case .connecting: "Connecting…"
-        case .online: "Receiving live readings"
-        case .offline: "Connection unavailable"
-        }
-    }
-
-    private var connectionStatus: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: connectionState == .online ? "checkmark.circle.fill" :
-                    connectionState == .offline ? "exclamationmark.circle.fill" : "arrow.triangle.2.circlepath")
-                .foregroundStyle(connectionState == .online ? Color.green :
-                                 connectionState == .offline ? Color.orange : Color.secondary)
-                .accessibilityHidden(true)
-            Text(nearby.status)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
 }
 
 private struct DashboardSettingsView: View {
     @ObservedObject var nearby: NearbyMacStore
     @Environment(\.dismiss) private var dismiss
+    @State private var showAbout = false
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Connected Mac") {
-                    LabeledContent("Name", value: nearby.selectedDisplayName ?? "Mac")
+                Section("Dashboard") {
+                    Picker("Refresh interval", selection: Binding(
+                        get: { nearby.refreshIntervalSeconds },
+                        set: { nearby.setRefreshInterval($0) }
+                    )) {
+                        ForEach(NearbyMacStore.refreshIntervals, id: \.self) { seconds in
+                            Text("\(seconds) seconds").tag(seconds)
+                        }
+                    }
+                }
+                Section {
+                    Button("About This Mac") { showAbout = true }
                 }
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showAbout) { AboutThisMacView(store: nearby) }
         }
+    }
+}
+
+private struct AboutThisMacView: View {
+    @ObservedObject var store: NearbyMacStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                HStack(spacing: 7) {
+                    Button { dismiss() } label: {
+                        Circle().fill(Color(red: 1, green: 0.38, blue: 0.35))
+                            .frame(width: 13, height: 13)
+                    }
+                    .accessibilityLabel("Close About This Mac")
+                    Circle().fill(Color(white: 0.88)).frame(width: 13, height: 13)
+                    Circle().fill(Color(white: 0.88)).frame(width: 13, height: 13)
+                    Spacer()
+                }
+                .padding(.top, 24)
+
+                if let info = store.aboutInfo {
+                    if let data = info.imagePNG, let image = UIImage(data: data) {
+                        Image(uiImage: image)
+                            .resizable().scaledToFit()
+                            .frame(width: 220, height: 170)
+                            .padding(.top, 30)
+                    } else {
+                        Image(systemName: "desktopcomputer")
+                            .font(.system(size: 100, weight: .ultraLight))
+                            .frame(height: 170)
+                            .padding(.top, 30)
+                    }
+                    Text(info.modelName)
+                        .font(.system(size: 26, weight: .semibold))
+                        .padding(.top, 16)
+                    if let chip = info.chip {
+                        Text(chip.replacingOccurrences(of: "Apple ", with: ""))
+                            .font(.system(size: 12)).foregroundStyle(.secondary)
+                            .padding(.top, 3)
+                    }
+                    VStack(spacing: 5) {
+                        aboutRow("Chip", info.chip)
+                        aboutRow("Memory", info.memory)
+                        aboutRow("Startup disk", info.startupDisk)
+                        aboutRow("Serial number", info.serialNumber)
+                        aboutRow("macOS", info.macOS)
+                    }
+                    .padding(.top, 28)
+                    Text("™ and © 1983–2026 Apple Inc.\nAll Rights Reserved.")
+                        .font(.system(size: 11)).foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 36)
+                } else if let error = store.aboutError {
+                    ContentUnavailableView("About This Mac unavailable", systemImage: "desktopcomputer.trianglebadge.exclamationmark", description: Text(error))
+                        .padding(.top, 80)
+                    Button("Try Again") { store.loadAbout() }
+                        .padding(.top, 12)
+                } else {
+                    ProgressView("Loading Mac details…")
+                        .padding(.top, 160)
+                }
+                Spacer(minLength: 30)
+            }
+            .frame(maxWidth: 320)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color.white)
+        .foregroundStyle(Color.black)
+        .presentationDetents([.height(580), .large])
+        .presentationDragIndicator(.hidden)
+        .task { store.loadAbout() }
+    }
+
+    private func aboutRow(_ title: String, _ value: String?) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title).frame(width: 100, alignment: .trailing)
+                .foregroundStyle(.secondary)
+            Text(value ?? "—").frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: 13))
     }
 }
 

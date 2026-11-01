@@ -44,6 +44,27 @@ public struct MetricSnapshot: Codable, Sendable, Equatable {
     }
 }
 
+public struct MacAboutInfo: Codable, Sendable, Equatable {
+    public let modelName: String
+    public let chip: String?
+    public let memory: String?
+    public let startupDisk: String?
+    public let serialNumber: String?
+    public let macOS: String
+    public let imagePNG: Data?
+
+    public init(modelName: String, chip: String?, memory: String?, startupDisk: String?,
+                serialNumber: String?, macOS: String, imagePNG: Data?) {
+        self.modelName = modelName
+        self.chip = chip
+        self.memory = memory
+        self.startupDisk = startupDisk
+        self.serialNumber = serialNumber
+        self.macOS = macOS
+        self.imagePNG = imagePNG
+    }
+}
+
 public enum MetricFormat {
     public static func percent(_ fraction: Double?) -> String {
         guard let fraction else { return "—" }

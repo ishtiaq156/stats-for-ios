@@ -211,6 +211,8 @@ final class StatsCompanionModel: ObservableObject {
             self?.snapshot ?? MetricSnapshot(machineName: "Mac")
         }, history: { [weak self] in
             self?.recentSnapshots ?? []
+        }, about: {
+            SystemSampler.about()
         }, onPort: { [weak self] port in
             self?.port = port
             self?.localAddress = Self.ipv4Address().map { "\($0):\(port)" }

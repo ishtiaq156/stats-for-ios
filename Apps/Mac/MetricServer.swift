@@ -12,6 +12,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     private let snapshot: () -> MetricSnapshot
     private let history: () -> [MetricSnapshot]
+    private let about: () -> MacAboutInfo
     private let onPort: (UInt16) -> Void
     private let onDiscovery: (Bool, String?) -> Void
     private let onPhones: ([PairedPhone]) -> Void
@@ -32,6 +33,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     init(snapshot: @escaping () -> MetricSnapshot,
          history: @escaping () -> [MetricSnapshot],
+         about: @escaping () -> MacAboutInfo,
          onPort: @escaping (UInt16) -> Void,
          onDiscovery: @escaping (Bool, String?) -> Void,
          onPhones: @escaping ([PairedPhone]) -> Void,
@@ -39,6 +41,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
          phones: PhoneRegistry = PhoneRegistry()) {
         self.snapshot = snapshot
         self.history = history
+        self.about = about
         self.onPort = onPort
         self.onDiscovery = onDiscovery
         self.onPhones = onPhones
@@ -187,7 +190,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
             let encrypted = Data(data.dropFirst(prefixLength + 36))
             guard let request = try? SecurePacket.open(encrypted, using: key),
                   let command = String(data: request, encoding: .utf8),
-                  command == "snapshot.v1" || command == "history.v1" else {
+                  ["snapshot.v1", "history.v1", "about.v1"].contains(command) else {
                 connection.cancel()
                 return
             }
@@ -197,6 +200,8 @@ final class MetricServer: NSObject, NetServiceDelegate {
                 let payload: Data?
                 if command == "history.v1" {
                     payload = try? JSONEncoder().encode(self.history())
+                } else if command == "about.v1" {
+                    payload = try? JSONEncoder().encode(self.about())
                 } else {
                     payload = try? JSONEncoder().encode(self.snapshot())
                 }
