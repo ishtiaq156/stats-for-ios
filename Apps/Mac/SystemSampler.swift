@@ -114,7 +114,7 @@ final class SystemSampler {
             }
         }
         guard result == KERN_SUCCESS else { return nil }
-        let page = UInt64(vm_kernel_page_size)
+        let page = UInt64(getpagesize())
         let used = (UInt64(info.active_count) + UInt64(info.wire_count) + UInt64(info.compressor_page_count)) * page
         return (min(used, ProcessInfo.processInfo.physicalMemory), ProcessInfo.processInfo.physicalMemory)
     }

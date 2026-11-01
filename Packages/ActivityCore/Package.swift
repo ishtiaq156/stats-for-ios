@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -9,5 +9,6 @@ let package = Package(
         .binaryTarget(name: "Spake2FFI", path: "Vendor/Spake2FFI.xcframework"),
         .target(name: "ActivityCore", dependencies: ["Spake2FFI"]),
         .testTarget(name: "ActivityCoreTests", dependencies: ["ActivityCore"])
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

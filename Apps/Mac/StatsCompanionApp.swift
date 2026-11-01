@@ -250,7 +250,7 @@ final class StatsCompanionModel: ObservableObject {
             var bytes = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
             var ipv4 = address.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee.sin_addr }
             guard inet_ntop(AF_INET, &ipv4, &bytes, socklen_t(bytes.count)) != nil else { continue }
-            let value = String(cString: bytes)
+            let value = String(decoding: bytes.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) }, as: UTF8.self)
             if String(cString: item.pointee.ifa_name) == "en0" { return value }
             if fallback == nil { fallback = value }
         }

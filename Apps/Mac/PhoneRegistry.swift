@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-struct PairedPhone: Identifiable {
+struct PairedPhone: Identifiable, Sendable {
     let id: UUID
     let name: String
     let lastSeen: Date?

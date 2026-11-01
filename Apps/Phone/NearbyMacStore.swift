@@ -620,15 +620,16 @@ final class NearbyMacStore: ObservableObject {
 
     private func receiveHistoryBody(on connection: NWConnection, key: Data, length: Int, generation: UUID) {
         connection.receive(minimumIncompleteLength: length, maximumLength: length) { [weak self] body, _, _, error in
+            guard let self else { connection.cancel(); return }
             Task { @MainActor in
-                guard self?.selectionGeneration == generation,
-                      self?.activeHistoryConnection === connection else { connection.cancel(); return }
-                defer { self?.cancelHistoryRequest() }
+                guard self.selectionGeneration == generation,
+                      self.activeHistoryConnection === connection else { connection.cancel(); return }
+                defer { self.cancelHistoryRequest() }
                 guard error == nil, let body,
                       let plaintext = try? SecurePacket.open(body, using: key),
                       let samples = try? JSONDecoder().decode([MetricSnapshot].self, from: plaintext) else { return }
-                self?.mergeHistory(samples)
-                self?.historyLoaded = true
+                self.mergeHistory(samples)
+                self.historyLoaded = true
             }
         }
     }

@@ -24,7 +24,7 @@ The project takes inspiration from [Stats](https://github.com/exelban/stats) for
 | --- | --- |
 | Mac companion | macOS 14+ |
 | iPhone dashboard | iOS 17+ |
-| Development | Xcode 27.1+, Swift 5.10; XcodeGen for regenerating the project |
+| Development | Xcode 27.2+, Swift 6 language mode; XcodeGen for regenerating the project |
 | Connection | Mac and iPhone on the same reachable local network |
 | iPhone installation | Xcode signing with a free Personal Team is supported |
 

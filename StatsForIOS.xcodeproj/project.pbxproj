@@ -288,7 +288,7 @@
 				MARKETING_VERSION = 0.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
 				SDKROOT = macosx;
-				SWIFT_VERSION = 5.10;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -311,7 +311,7 @@
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.10;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
@@ -335,7 +335,7 @@
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsForIOS;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.10;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -358,7 +358,7 @@
 				MARKETING_VERSION = 0.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ishtiaqsyed.StatsCompanion;
 				SDKROOT = macosx;
-				SWIFT_VERSION = 5.10;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};

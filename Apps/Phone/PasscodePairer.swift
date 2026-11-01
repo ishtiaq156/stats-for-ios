@@ -2,6 +2,7 @@ import ActivityCore
 import Foundation
 import Network
 
+@MainActor
 final class PasscodePairer {
     enum PairingError: LocalizedError {
         case invalidResponse, timedOut, connectionFailed, credentialSaveFailed, invalidName, invalidCode
@@ -21,11 +22,11 @@ final class PasscodePairer {
     private let connection: NWConnection
     private let exchange: PairingExchange
     private let phoneName: String
-    private var completion: ((Result<PairingWire.Enrollment, Error>) -> Void)?
+    private var completion: (@MainActor (Result<PairingWire.Enrollment, Error>) -> Void)?
     private var finished = false
 
     init(endpoint: NWEndpoint, code: String, phoneName: String,
-         completion: @escaping (Result<PairingWire.Enrollment, Error>) -> Void) throws {
+         completion: @escaping @MainActor (Result<PairingWire.Enrollment, Error>) -> Void) throws {
         exchange = try PairingExchange(role: .phone, code: code)
         connection = NWConnection(to: endpoint, using: .tcp)
         self.phoneName = phoneName
@@ -33,12 +34,15 @@ final class PasscodePairer {
     }
 
     func start() {
+        // NWConnection delivers state, send, and receive callbacks on this queue.
         connection.stateUpdateHandler = { [weak self] state in
-            guard let self else { return }
-            switch state {
-            case .ready: self.sendHello()
-            case .failed: self.finish(.failure(PairingError.connectionFailed))
-            default: break
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                switch state {
+                case .ready: self.sendHello()
+                case .failed: self.finish(.failure(PairingError.connectionFailed))
+                default: break
+                }
             }
         }
         connection.start(queue: .main)
@@ -85,21 +89,25 @@ final class PasscodePairer {
         }
     }
 
-    private func send(_ body: Data, then: @escaping () -> Void) {
+    private func send(_ body: Data, then: @escaping @MainActor () -> Void) {
         connection.send(content: SecurePacket.frame(body), completion: .contentProcessed { [weak self] error in
-            if error != nil { self?.finish(.failure(PairingError.connectionFailed)) }
-            else { then() }
+            MainActor.assumeIsolated {
+                if error != nil { self?.finish(.failure(PairingError.connectionFailed)) }
+                else { then() }
+            }
         })
     }
 
-    private func receiveFrame(_ completion: @escaping (Data?) -> Void) {
+    private func receiveFrame(_ completion: @escaping @MainActor (Data?) -> Void) {
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { [weak self] header, _, _, error in
-            guard let self, error == nil, let header, let length = SecurePacket.length(header) else {
-                completion(nil)
-                return
-            }
-            self.connection.receive(minimumIncompleteLength: length, maximumLength: length) { body, _, _, error in
-                completion(error == nil ? body : nil)
+            MainActor.assumeIsolated {
+                guard let self, error == nil, let header, let length = SecurePacket.length(header) else {
+                    completion(nil)
+                    return
+                }
+                self.connection.receive(minimumIncompleteLength: length, maximumLength: length) { body, _, _, error in
+                    MainActor.assumeIsolated { completion(error == nil ? body : nil) }
+                }
             }
         }
     }

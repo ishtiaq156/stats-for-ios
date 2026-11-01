@@ -87,7 +87,7 @@ final class TabMonitorView: NSView {
         }
     }
 
-    deinit {
+    isolated deinit {
         stopMonitoring()
     }
 }

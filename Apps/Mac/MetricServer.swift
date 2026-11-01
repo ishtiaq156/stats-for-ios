@@ -3,20 +3,21 @@ import Foundation
 import Network
 import Security
 
-final class MetricServer: NSObject, NetServiceDelegate {
-    enum PairingEndReason {
+// Listener, pairing, and registry state stay on `queue`; Bonjour advertising stays on the main queue.
+final class MetricServer: NSObject, NetServiceDelegate, @unchecked Sendable {
+    enum PairingEndReason: Sendable {
         case used
         case expired
         case exhausted
     }
 
-    private let snapshot: () -> MetricSnapshot
-    private let history: () -> [MetricSnapshot]
-    private let about: () -> MacAboutInfo
-    private let onPort: (UInt16) -> Void
-    private let onDiscovery: (Bool, String?) -> Void
-    private let onPhones: ([PairedPhone]) -> Void
-    private let onPairingEnded: (PairingEndReason) -> Void
+    private let snapshot: @MainActor @Sendable () -> MetricSnapshot
+    private let history: @MainActor @Sendable () -> [MetricSnapshot]
+    private let about: @MainActor @Sendable () -> MacAboutInfo
+    private let onPort: @MainActor @Sendable (UInt16) -> Void
+    private let onDiscovery: @MainActor @Sendable (Bool, String?) -> Void
+    private let onPhones: @MainActor @Sendable ([PairedPhone]) -> Void
+    private let onPairingEnded: @MainActor @Sendable (PairingEndReason) -> Void
     private let queue = DispatchQueue(label: "StatsForIOS.MetricServer")
     private var listener: NWListener?
     private var advertiser: NetService?
@@ -31,13 +32,13 @@ final class MetricServer: NSObject, NetServiceDelegate {
     }
     private var pairingSession: PairingSession?
 
-    init(snapshot: @escaping () -> MetricSnapshot,
-         history: @escaping () -> [MetricSnapshot],
-         about: @escaping () -> MacAboutInfo,
-         onPort: @escaping (UInt16) -> Void,
-         onDiscovery: @escaping (Bool, String?) -> Void,
-         onPhones: @escaping ([PairedPhone]) -> Void,
-         onPairingEnded: @escaping (PairingEndReason) -> Void,
+    init(snapshot: @escaping @MainActor @Sendable () -> MetricSnapshot,
+         history: @escaping @MainActor @Sendable () -> [MetricSnapshot],
+         about: @escaping @MainActor @Sendable () -> MacAboutInfo,
+         onPort: @escaping @MainActor @Sendable (UInt16) -> Void,
+         onDiscovery: @escaping @MainActor @Sendable (Bool, String?) -> Void,
+         onPhones: @escaping @MainActor @Sendable ([PairedPhone]) -> Void,
+         onPairingEnded: @escaping @MainActor @Sendable (PairingEndReason) -> Void,
          phones: PhoneRegistry = PhoneRegistry()) {
         self.snapshot = snapshot
         self.history = history
@@ -51,14 +52,14 @@ final class MetricServer: NSObject, NetServiceDelegate {
     }
 
     func start() {
-        startListener(preferredPort: NWEndpoint.Port(rawValue: 8888)!)
         queue.async { [weak self] in
             guard let self else { return }
+            self.startListener(preferredPort: NWEndpoint.Port(rawValue: 8888)!)
             self.publishPhones()
         }
     }
 
-    func beginPairing(completion: @escaping (String, Date) -> Void) {
+    func beginPairing(completion: @escaping @MainActor @Sendable (String, Date) -> Void) {
         queue.async { [weak self] in
             guard let self else { return }
             var random: UInt32 = 0
@@ -127,10 +128,15 @@ final class MetricServer: NSObject, NetServiceDelegate {
     }
 
     func stop() {
-        listener?.cancel()
-        advertiser?.stop()
-        advertiser = nil
-        queue.async { [weak self] in self?.pairingSession = nil }
+        queue.async { [weak self] in
+            self?.listener?.cancel()
+            self?.listener = nil
+            self?.pairingSession = nil
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.advertiser?.stop()
+            self?.advertiser = nil
+        }
     }
 
     private func advertise(port: NWEndpoint.Port) {
@@ -145,12 +151,14 @@ final class MetricServer: NSObject, NetServiceDelegate {
 
     func netServiceDidPublish(_ sender: NetService) {
         NSLog("Stats Companion Bonjour published")
-        onDiscovery(true, nil)
+        DispatchQueue.main.async { [onDiscovery] in onDiscovery(true, nil) }
     }
 
     func netService(_ sender: NetService, didNotPublish errorDict: [String: NSNumber]) {
         NSLog("Stats Companion Bonjour failed: %@", String(describing: errorDict))
-        onDiscovery(false, "Local discovery is unavailable. Manual address pairing may still work.")
+        DispatchQueue.main.async { [onDiscovery] in
+            onDiscovery(false, "Local discovery is unavailable. Manual address pairing may still work.")
+        }
     }
 
     private func accept(_ connection: NWConnection) {
@@ -278,7 +286,7 @@ final class MetricServer: NSObject, NetServiceDelegate {
         }
     }
 
-    private func receiveFrame(on connection: NWConnection, completion: @escaping (Data?) -> Void) {
+    private func receiveFrame(on connection: NWConnection, completion: @escaping @Sendable (Data?) -> Void) {
         connection.receive(minimumIncompleteLength: 4, maximumLength: 4) { header, _, _, error in
             guard error == nil, let header, let length = SecurePacket.length(header) else {
                 completion(nil)
