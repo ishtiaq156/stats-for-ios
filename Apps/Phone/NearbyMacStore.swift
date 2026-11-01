@@ -48,12 +48,18 @@ final class NearbyMacStore: ObservableObject {
     private var discoveryPaused = false
     private var selectionGeneration = UUID()
     private var snapshotRequestID = UUID()
-    private var sessionRequested = false
+    private var sessionRequested = false {
+        didSet {
+            guard sessionRequested != oldValue else { return }
+            UserDefaults.standard.set(sessionRequested, forKey: Self.resumeDashboardKey)
+        }
+    }
     private static let lastMacKey = "StatsForIOS.lastMac"
     private static let lastMacDisplayNameKey = "StatsForIOS.lastMacDisplayName"
     private static let manualHostKey = "StatsForIOS.manualHost"
     private static let manualPortKey = "StatsForIOS.manualPort"
     private static let refreshIntervalKey = "StatsForIOS.refreshIntervalSeconds"
+    private static let resumeDashboardKey = "StatsForIOS.resumeDashboard"
     static let refreshIntervals = [2, 5, 10, 30]
 
     init() {
@@ -91,12 +97,14 @@ final class NearbyMacStore: ObservableObject {
             defaults.removeObject(forKey: Self.lastMacDisplayNameKey)
             defaults.removeObject(forKey: Self.manualHostKey)
             defaults.removeObject(forKey: Self.manualPortKey)
+            defaults.removeObject(forKey: Self.resumeDashboardKey)
             return
         }
         selectedName = name
         selectedDisplayName = defaults.string(forKey: Self.lastMacDisplayNameKey) ?? name
         selectedKey = credential.key
         selectedPhoneID = credential.phoneID
+        sessionRequested = defaults.object(forKey: Self.resumeDashboardKey) as? Bool ?? true
         status = "Looking for \(selectedDisplayName ?? name)"
         if let host = defaults.string(forKey: Self.manualHostKey),
            let portNumber = defaults.object(forKey: Self.manualPortKey) as? Int,
@@ -119,13 +127,11 @@ final class NearbyMacStore: ObservableObject {
         browser?.cancel()
         browser = nil
         devices = []
-        sessionActive = false
-        sessionRequested = false
         selectedReachable = false
-        snapshot = nil
         selectionGeneration = UUID()
         cancelSnapshotRequest()
         cancelHistoryRequest()
+        if activeAboutConnection != nil { aboutError = "Loading was interrupted. Try again." }
         cancelAboutRequest()
         historyLoaded = false
     }
@@ -336,6 +342,7 @@ final class NearbyMacStore: ObservableObject {
         defaults.removeObject(forKey: Self.lastMacDisplayNameKey)
         defaults.removeObject(forKey: Self.manualHostKey)
         defaults.removeObject(forKey: Self.manualPortKey)
+        defaults.removeObject(forKey: Self.resumeDashboardKey)
     }
 
     private func remember(_ device: Device) {
